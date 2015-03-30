@@ -1,0 +1,88 @@
+Tommy Lindman - tomli962
+Emil Nilsson - emini901
+
+BNF-GRAMMAR
+
+<program> ::= startaNu <nyrad> <satser> slutaNu
+          | <satser>
+
+<satser> ::= <sats> <nyrad>
+         | <satser> <sats>
+
+<sats> ::= <loop>
+       | <om>
+       | <deklarering>
+       | <tilldelning>
+       | <funktion>
+       | <skriv>
+       | <nyrad>
+
+<uttyck> ::= <jämförelse>
+         | <logiskt_uttryck>
+         | <aritm_uttryck>
+         | <identifierare>
+         | <f_anrop>
+         # Antagligen en massa mer saker
+         
+<loop> ::= för <identifierare> <heltal> till <heltal> <nyrad> start <nyrad> <satser> slut
+       | medans <jämförelse> <nyrad> start <nyrad> <satser> slut
+
+<om> ::= om <logiskt_uttr> <nyrad> start <nyrad> <satser> [<annars_kropp>] slut
+<annars_kropp> ::= annars <nyrad> <satser>
+
+<deklarering> ::= skapa <identifierare> [= <uttryck>]
+
+<tilldelning> ::= <identifierare> = <uttryck>
+
+<funktion> ::= skapa metoden <identifierare> [<parameter_lista>] <nyrad> start <nyrad> <satser> slut
+
+<parameter_lista> ::= <identifierare> [ , <parameter_lista> ]
+
+<identifierare> ::= <namn>
+
+<name> ::= /[\wåäöÅÄÖ]+/
+
+<logiskt_uttryck> ::= <jämförelse>  [[<logisk_operator> <jämförelse>] <logisk_operator <logiskt_uttryck>]
+
+<logisk_operator> ::= och
+                  | eller
+                  | inte är
+
+<jämförelse> ::= <uttryck> <jämf_operator> <uttryck>
+
+<jämf_operator> ::= < | > | => | =< | == | !=
+
+<nyrad> ::= \n
+
+<aritm_uttryck> ::= <aritm_uttryck> + <term>
+                | <aritm_uttryck> - <term>
+                | <term>
+
+<term> ::= <term> * <faktor>
+       | <term> / <faktor>
+       | <faktor>
+       | ###### Borde sträng vara här?????? ############
+
+<faktor> ::= ( <aritm_uttryck> )
+         | <värde>
+
+<värde> ::= <bool>
+        | <heltal>
+        | <flyttal>
+        | <sträng>
+
+<bool> ::= sant
+       | falskt
+
+<heltal> ::= Integer
+
+<flyttal> ::= Float
+
+<sträng> ::= /\".+\"/
+
+<skriv> ::= skriv <sträng> # Ska ändras till <uttryck>??
+
+
+
+############### Kvar är Listor och Parlistor ################
+
