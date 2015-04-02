@@ -13,11 +13,17 @@ class StartaNu
       token(/\n/) { |m| m} # Matcha nyradstecken
       token(/\s+/) # ignorera mellanslag
       token(/#.+/) # ignorera kommentarer
+
       
       token(/skapa metoden/)
       token(/inte är/)
-      token(/-?\d+/) {|heltal| heltal.to_i } # Matcha heltal
-      token(/\".+\"/) { |m| m} # Matcha strängar
+      token(/-?\d+\.\d+/) { |flyttal| puts "Hitta ett flyttal"; flyttal.to_f } #Matcha flyttal
+      token(/-?\d+/) { |heltal| heltal.to_i } # Matcha heltal
+      #token(/\".+\"/) { |m| m} # Matcha strängar
+      token(/\"[^\"]+\"/) { |m| m } # Ett nytt test att matcha strängar
+      token(/==/) { |m| m }
+      token(/<=/) { |m| m }
+      token(/>=/) { |m| m }
       token(/startaNu/) { |m| m }
       token(/slutaNu/) { |m| m }
       token(/[\w]+/) { |m| m } # Matcha ord
@@ -43,7 +49,8 @@ class StartaNu
         match(:om)
         match(:deklarering)
         match(:tilldelning)
-        #match(:aritm_uttryck)
+        match(:jamforelse) { |jamforelse| [jamforelse]} # Endast här för testning
+        match(:aritm_uttryck) {|aritm_uttryck| [aritm_uttryck]} # Endast här för testning
         match(:funktion)
         match(:skriv) {|skriv| [skriv]}
         #match(:get_variabel)
@@ -51,8 +58,8 @@ class StartaNu
       end
 
       rule :uttryck do
-        match(:jamförelse)
-        match(:logiskt_uttryck)
+        #match(:jamförelse) # Kanske ska vara här, borttaget pga stack level to deep
+        #match(:logiskt_uttryck) # Kanske ska vara här, borttaget pga stack level to deep
         match(:aritm_uttryck)
         match(:identifierare)
         match(:f_anrop)
@@ -112,14 +119,14 @@ class StartaNu
       end
 
       rule :jamforelse do
-        match(:uttryck, :jamf_operator, :uttryck)
+        match(:uttryck, :jamf_operator, :uttryck) { |u1,op,u2| Jamforelse.new(u1, JamfOperator.new(op), u2) }
       end
 
       rule :jamf_operator do
         match("<")
         match(">")
-        match("=>")
-        match("=<")
+        match(">=")
+        match("<=")
         match("==")
         match("!=")
       end
@@ -129,15 +136,16 @@ class StartaNu
       end
 
       rule :aritm_uttryck do
-        match(:aritm_uttryck, "+", :term) #{ |uttryck,_,termm| uttryck + termm }
-        match(:aritm_uttryck, "-", :term) #{ |uttryck,_,termm| uttryck - termm }
+        match(:term, "+", :aritm_uttryck) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('+'),term2) }
+        match(:aritm_uttryck, "-", :term) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('-'),term2) }
         match(:term) #{ |t| t }
       end
 
       rule :term do
-        match(:term, "*", :faktor) #{ |termm, _, faktor| termm * faktor }
-        match(:term, "/", :faktor) #{ |termm, _, faktor| termm / faktor }
+        match(:term, "*", :faktor) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('*'),term2)}
+        match(:term, "/", :faktor) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('/'),term2)}
         match(:faktor) #{ |faktor| faktor }
+        #{ |termm, _, faktor| termm * faktor }
       end
 
       rule :faktor do
@@ -162,22 +170,22 @@ class StartaNu
       end
 
       rule :heltal do
-        match(Integer)
+        match(Integer) { |heltal| Varde.new(heltal) }
       end
 
       rule :flyttal do
-        match(Float)
+        match(Float) { |flyttal| Varde.new(flyttal) }
       end
 
       rule :strang do
-        match(/\".+\"/)
+        match(/\".+\"/) { |strang| Varde.new(strang[1..-2]) }
       end
 
       ####################### Skriv / print #############
       rule :skriv do
         # Matchar till en början bara utskrift av en sträng
         match('skriv', :strang) { |_, skriv|
-          SkrivUt.new(skriv[1..-2]) }
+          SkrivUt.new(skriv) }
         #match('skriv', :get_variabel) { |_, att_skriva_ut| att_skriva_ut }
       end
       ###################### Slut skriv / print ########
@@ -198,7 +206,6 @@ class StartaNu
       #return @startaNuParser.parse yield
       result = @startaNuParser.parse yield
       result.eval
-      puts "Borde väl funka?"
       return
     end
     print "StartaNu >>> "
@@ -235,7 +242,22 @@ end
 sn = StartaNu.new
 
 sn.run(true) {'skriv "hej world"
+#456 + 3
+#"ska vi leka" + " nu?"
 
+4 * 3 + 10
+skriv "Testar 5 == 5"
+5 == 5
+skriv "Testar 0 == 1"
+0 == 1
+
+skriv "Testar 1 <= 0"
+1 <= 0
+
+skriv "Testar 1 >= 0"
+1 >= 0
+#2 * 5
+#100.0 / 3.0
 skriv "hej igen"'}
 #puts sn.run(true) {"(1 + 4)*5
 #"}
