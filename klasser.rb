@@ -23,7 +23,11 @@ class SkrivUt
   end
 
   def eval()
-    puts @att_skriva_ut.eval()
+    if @att_skriva_ut.class != String
+      puts @att_skriva_ut.eval()
+    else
+      puts "#{@att_skriva_ut}"
+    end
   end
 end
 
@@ -91,7 +95,8 @@ class Jamforelse
     #puts "Operator-class: #{@op.class}"
     #result = @v_uttryck.eval() > @h_uttryck.eval()
     result = @operator.eval(@v_uttryck, @h_uttryck)
-    puts "#{result}"
+    #puts "#{result}"
+    return result
   end
 end
 
@@ -103,7 +108,7 @@ class JamfOperator
   end
 
   def eval(uttr1,uttr2)
-    case op
+    case @op
     when '>'
       return uttr1.eval() > uttr2.eval()
     when '>='
@@ -119,7 +124,36 @@ class JamfOperator
     end
   end
 end
-  
+
+class LogisktUttryck
+  attr_accessor :jamf1, :l_op, :jamf2
+  def initialize(j1, op, j2)
+    @jamf1 = j1
+    @l_op = op
+    @jamf2 = j2
+  end
+
+  def eval()
+    puts "#{@jamf1.eval()} #{@jamf2.eval()} #{@l_op.eval(@jamf1,@jamf2)}"
+    return @l_op.eval(@jamf1, @jamf2)
+  end
+end
+
+class LogiskOperator
+  attr_accessor :operator
+  def initialize(operator)
+    @operator = operator
+  end
+
+  def eval(uttr1, uttr2)
+    case @operator
+    when 'och'
+      return (uttr1.eval() and uttr2.eval())
+    when 'eller'
+      return (uttr1.eval() or uttr2.eval())
+    end
+  end
+end
 ###################################
 # En ganska onödig klass som man  #
 # antagligen kommer kunna ta bort #
@@ -134,4 +168,45 @@ class NyRad
     #puts "#{@temp}"
   end
 end
+
+class Om
+  attr_accessor :l_ut, :satser, :annars_satser
+  def initialize(l_ut, satser, annars_satser = false)
+    @l_ut = l_ut
+    @satser = satser
+    @annars_satser = annars_satser
+  end
+
+  def eval()
+    puts "what"
+    if @l_ut.eval()
+      puts "what2"
+      @satser.eval()
+    elsif @annars_satser != false
+      puts "annars"
+      @annars_satser.eval()
+    end
+  end
+end
+
+class Scope
+  attr_accessor :variables, :previous_scope
+  def initialize(previous)
+    @variables = Hash.new
+    @previous_scope = previous   
+  end
+
+  def add_variable(name, value)
+    @variables[name]=value
+    puts "\n ¤&¤&¤&¤&¤&&¤&¤&¤& #{@variables[name].eval()} ¤¤¤¤#%#%#¤# \n"
+  end
+  
+  def eval()
+  end
+end
+
+#class Deklarering
+#  @variables = Hash.new
+#  def initialize(name, value)
+ 
 

@@ -7,8 +7,9 @@ class StartaNu
   
   def initialize(filnamn = nil)
     @fil = filnamn
-    @@variables = {}
+    @@current_scope = Scope.new(nil)
     @startaNuParser = Parser.new("Starta Nu!") do
+      
      
       token(/\n/) { |m| m} # Matcha nyradstecken
       token(/\s+/) # ignorera mellanslag
@@ -24,12 +25,13 @@ class StartaNu
       token(/==/) { |m| m }
       token(/<=/) { |m| m }
       token(/>=/) { |m| m }
+      token(/!=/) { |m| m }
       token(/startaNu/) { |m| m }
       token(/slutaNu/) { |m| m }
       token(/[\w]+/) { |m| m } # Matcha ord
       token(/./) { |m| m } # Matcha tecken
-      
-      start :program do 
+
+      start :program do
         #match(:assign)
         #match(:expr)
         match("startaNu",:nyrad,:satser,"slutaNu") {|_,_,satser,_| Satser.new(satser)}
@@ -46,11 +48,13 @@ class StartaNu
 
       rule :sats do
         match(:loop)
-        match(:om)
-        match(:deklarering)
+        match(:om) { |om| [om] }
+        match(:deklarering) { |deklarering| [deklarering]}
         match(:tilldelning)
-        match(:jamforelse) { |jamforelse| [jamforelse]} # Endast här för testning
+        #match(:jamforelse) { |jamforelse| [jamforelse]} # Endast här för testning
+        match(:logiskt_uttryck) { |logiskt_uttryck| [logiskt_uttryck]} # Endast här för testning
         match(:aritm_uttryck) {|aritm_uttryck| [aritm_uttryck]} # Endast här för testning
+        
         match(:funktion)
         match(:skriv) {|skriv| [skriv]}
         #match(:get_variabel)
@@ -71,20 +75,18 @@ class StartaNu
       end
 
       rule :om do
-        match("om", :logiskt_uttryck, :nyrad, "start", :nyrad, :satser, "slut")
-        match("om", :logiskt_uttryck, :nyrad, "start", :nyrad, :satser, :annars_kropp, "slut")
+        match("om", :logiskt_uttryck, :nyrad, "start", :nyrad, :satser, "slut") { |_, l_ut, _, _, _, satser, _| Om.new(l_ut, Satser.new(satser)) }
+        match("om", :logiskt_uttryck, :nyrad, "start", :nyrad, :satser, :annars_kropp, "slut") { |_, l_ut, _, _, _, satser, annars_kropp, _ | Om.new(l_ut, Satser.new(satser), annars_kropp) }
       end
 
       rule :annars_kropp do
-        match("annars", :nyrad, :satser)
+        match("annars", :satser) { |_,satser| Satser.new(satser) }
       end
 
       ###################### Variabeldeklarering / tilldelning #######
       rule :deklarering do
-        #match("skapa",:tilldelning) { |_, tilldelning| tilldelning }
-        match("skapa",:identifierare,"=",:uttryck) #{ |_,name, _, value| @@variables[name] = value}
+        match("skapa",:identifierare,"=",:uttryck) { |_,name, _, value| @@current_scope.add_variable(name, value); NyRad.new() }
         match("skapa",:identifierare) #{ |_, name| @@variables[name] = 0 }
-        #match("skapa",:variabel,"=",/\w+/) { |_,name, _, value| @@variables[name] = value[1..-2]}
       end
 
       rule :tilldelning do
@@ -103,21 +105,24 @@ class StartaNu
       end
 
       rule :identifierare do
+        #match(:variabel)
         match(:name)
       end
 
       # Här är det nog lite fel..........
       rule :logiskt_uttryck do
-        match(:logiskt_uttryck, :logisk_operator, :logiskt_uttryck)
+        #match(:jamforelse)
+        match(:logiskt_uttryck, :logisk_operator, :logiskt_uttryck) { |uttr1, op, uttr2| LogisktUttryck.new(uttr1, LogiskOperator.new(op), uttr2) }
         match(:jamforelse)
+
       end
 
       rule :logisk_operator do
-        match("och")
+        match("och") 
         match("eller")
-        match("inte är")
+        match("inte är") # Denna funkar inte, är inte implementerad
       end
-
+      
       rule :jamforelse do
         match(:uttryck, :jamf_operator, :uttryck) { |u1,op,u2| Jamforelse.new(u1, JamfOperator.new(op), u2) }
       end
@@ -186,15 +191,15 @@ class StartaNu
         # Matchar till en början bara utskrift av en sträng
         match('skriv', :strang) { |_, skriv|
           SkrivUt.new(skriv) }
-        #match('skriv', :get_variabel) { |_, att_skriva_ut| att_skriva_ut }
+        match('skriv', :uttryck) { |_, att_skriva_ut| SkrivUt.new(att_skriva_ut) }
       end
       ###################### Slut skriv / print ########
 
       rule :name do
-        match(/[\wåäöÅÄÖ]+/)
+        match(/[\wåäöÅÄÖ]+/) {|name| name }
       end
     end
-  end
+  end    
   
   def done(str)
     ["quit","exit","bye",""].include?(str.chomp)
@@ -241,6 +246,19 @@ end
 #=begin
 sn = StartaNu.new
 
+sn.run(true){'
+skriv "massa"
+skapa hej = 5
+
+skriv hej
+
+#skapa hej2
+
+#hej2 = "tjena"
+
+#skriv hej2
+'}
+=begin
 sn.run(true) {'skriv "hej world"
 #456 + 3
 #"ska vi leka" + " nu?"
@@ -256,9 +274,19 @@ skriv "Testar 1 <= 0"
 
 skriv "Testar 1 >= 0"
 1 >= 0
+
+skriv "Testar 0 >= 1"
+0 >= 1
+
+skriv "Testar 1 != 0"
+1 != 0
+
+skriv "Testar 1 != 1"
+1 != 1
 #2 * 5
 #100.0 / 3.0
 skriv "hej igen"'}
+=end
 #puts sn.run(true) {"(1 + 4)*5
 #"}
 #puts sn.run(true) {"a
