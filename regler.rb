@@ -28,7 +28,7 @@ class StartaNu
       token(/!=/) { |m| m }
       token(/startaNu/) { |m| m }
       token(/slutaNu/) { |m| m }
-      token(/[\w]+/) { |m| m } # Matcha ord
+      token(/[\wåäöÅÄÖ]+/) { |m| m } # Matcha ord
       token(/./) { |m| m } # Matcha tecken
 
       start :program do
@@ -47,31 +47,18 @@ class StartaNu
       end
 
       rule :sats do
-        match(:loop)
+        match(:loop) { |loop| [loop]}
         match(:om) { |om| [om] }
-        match(:deklarering) { |deklarering| [deklarering]}
-        match(:tilldelning)
-        #match(:jamforelse) { |jamforelse| [jamforelse]} # Endast här för testning
-        match(:logiskt_uttryck) { |logiskt_uttryck| [logiskt_uttryck]} # Endast här för testning
-        match(:aritm_uttryck) {|aritm_uttryck| [aritm_uttryck]} # Endast här för testning
-        
-        match(:funktion)
         match(:skriv) {|skriv| [skriv]}
-        #match(:get_variabel)
+        #match(:funktion)
+        match(:deklarering) { |deklarering| [deklarering] }
+        match(:tilldelning) { |tilldelning| [tilldelning] }  
         match(:nyrad) {|nyrad| [nyrad]}
       end
 
-      rule :uttryck do
-        #match(:jamförelse) # Kanske ska vara här, borttaget pga stack level to deep
-        #match(:logiskt_uttryck) # Kanske ska vara här, borttaget pga stack level to deep
-        match(:aritm_uttryck)
-        match(:identifierare)
-        match(:f_anrop)
-      end
-
       rule :loop do
-        match("för", :identifierare, :heltal, :nyrad, "start", :nyrad, :satser, "slut")
-        match("medans", :jamforelse, :nyrad, "start", :nyrad, :satser, "slut")
+        match("för", :identifierare, :heltal, "till", :heltal, :nyrad, "start", :nyrad, :satser, "slut") { |_,var_namn,start,_,slut,_,_,_,satser,_| ForLoop.new(var_namn,start,slut,Satser.new(satser))}
+        match("medans", :jamforelse, :nyrad, "start", :nyrad, :satser, "slut") { |_, jamforelse,_,_,_,satser,_ | MedansLoop.new(jamforelse, Satser.new(satser))}
       end
 
       rule :om do
@@ -85,13 +72,13 @@ class StartaNu
 
       ###################### Variabeldeklarering / tilldelning #######
       rule :deklarering do
-        match("skapa",:identifierare,"=",:uttryck) { |_,name, _, value| @@current_scope.add_variable(name, value); NyRad.new() }
-        match("skapa",:identifierare) #{ |_, name| @@variables[name] = 0 }
+        match("skapa",:identifierare,"=",:uttryck) { |_, name, _, value| Deklarering.new(name,value) }
+        match("skapa",:identifierare) { |_, name| Deklarering.new(name) }
       end
 
       rule :tilldelning do
-        match(:identifierare,"=",:uttryck) #{ |name, _, value| @@variables[name] = value}
-        #match(:get_variabel,"=",/\w+/) { |name, _, value| @@variables[name] = value[1..-2] }
+        match(:identifierare,"=",:uttryck) { |name, _, value| Tilldelning.new(name, value) }
+
       end
 
       rule :funktion do
@@ -103,6 +90,14 @@ class StartaNu
         match(:identifierare, ",", :parameter_lista)
         match(:identifierare)
       end
+
+      rule :uttryck do      
+        match(:logiskt_uttryck) # Kanske ska vara här, borttaget pga stack level to deep
+        match(:aritm_uttryck) 
+        match(:identifierare) 
+        #match(:f_anrop)
+      end
+      
 
       rule :identifierare do
         #match(:variabel)
@@ -164,6 +159,7 @@ class StartaNu
         match(:heltal)
         match(:flyttal)
         match(:strang)
+        
         #match(Integer) { |int| int }
         #match(:varde,:siffra) { |varde, siffra| puts "In rule :varde"}
         #match("-", :varde) { |_, varde| varde * (-1)}
@@ -245,21 +241,44 @@ end
 # Testkörningar
 #=begin
 sn = StartaNu.new
-
 sn.run(true){'
-skriv "massa"
-skapa hej = 5
+#skapa hej = 5
 
-skriv hej
-
-#skapa hej2
-
-#hej2 = "tjena"
-
-#skriv hej2
+om 5 > 1
+start
+skriv "hehehehehehe"
+slut
 '}
 =begin
+sn.run(true){'
+
+
+
+skapa hej = 4
+för i 5 till 10
+start
+skriv hej
+
+slut
+'}
+=end
+=begin
 sn.run(true) {'skriv "hej world"
+
+skriv "massa"
+skapa hej = 5
+skapa tjena
+tjena = "Vad säger du nu då"
+skriv hej
+
+om 1 == 1
+start
+skapa tja = 10
+skriv "Vi testar"
+slut
+skriv "Vi testar efter att ett scope har avslutats"
+
+
 #456 + 3
 #"ska vi leka" + " nu?"
 
