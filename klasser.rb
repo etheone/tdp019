@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-@@debug = false
+@@debug = true
 
 class Scope
   attr_accessor :variables, :previous_scope
@@ -88,7 +88,7 @@ class SkrivUt
       puts "#{@@nuvarande_scope.get_variable(@att_skriva_ut).eval()}"
     end
     puts "DEBUG variabler i  @@nuvarande_scope DEBUG" if @@debug
-   # puts "#{@@nuvarande_scope.variables}"
+    puts "#{@@nuvarande_scope.variables}"
     if @@nuvarande_scope.previous_scope == nil
       puts "DEBUG: Previous är nil" if @@debug
     else
@@ -355,9 +355,6 @@ class MedansLoop
     @satser = satser
   end
 
- 
- 
- 
   def eval()
     while @jamforelse.eval()
       #puts "#{@jamforelse.v_uttryck.eval()} hehehehe #{@jamforelse.v_uttryck}" 
@@ -366,3 +363,51 @@ class MedansLoop
     end
   end
 end
+
+################ LISTOR #####################
+class Lista
+  attr_accessor :array
+  def initialize(value = [])
+    @temp = []
+    @temp << value
+    puts "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX DEBUG: INITIERAR LISTA #{value.eval()}"
+    if value != []
+      @array = @temp
+    else
+      @array = @temp
+    end
+  end
+
+  def eval()
+    @array
+  end
+end
+
+
+class ParLista
+  attr_accessor 
+  def initialize()
+  end
+end
+
+class LaggTillILista
+  attr_accessor
+  def initialize(name, value, key=nil)
+    @list_name = name
+    @key = key
+    @value = value
+  end
+
+  def eval()
+    listan = @@nuvarande_scope.get_variable(@list_name.name).eval()
+    if @key == nil
+      listan << @value.eval()
+    elsif
+      listan[@key] = @value.eval()
+    else
+      return "ERROR: LISTERROR"
+    end
+  end
+end
+
+############# SLUT PÅ LISTOR #####################3

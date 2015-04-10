@@ -18,6 +18,7 @@ class StartaNu
       
       token(/skapa metoden/)
       token(/inte är/)
+      token(/lägg till/) { |m| m }
       token(/-?\d+\.\d+/) { |flyttal| puts "Hitta ett flyttal"; flyttal.to_f } #Matcha flyttal
       token(/-?\d+/) { |heltal| heltal.to_i } # Matcha heltal
       #token(/\".+\"/) { |m| m} # Matcha strängar
@@ -108,13 +109,15 @@ class StartaNu
 
       ############# SLUT PÅ OM ####################
 
-      ###################### Variabeldeklarering / tilldelning #######
+      ###################### Deklarering / tilldelning #######
       rule :deklarering do
+        match(:lista)
         match("skapa",:identifierare,"=",:uttry) { |_, name, _, value| Deklarering.new(name,value) }
         match("skapa",:identifierare) { |_, name| Deklarering.new(name) }
       end
 
       rule :tilldelning do
+        match("lägg till", :aritm_uttryck, :identifierare) { |_,to_add,list_name| LaggTillILista.new(list_name, to_add ) }
         match(:identifierare,"=",:uttry) { |name, _, value| Tilldelning.new(name, value) }
       end
 
@@ -134,9 +137,27 @@ class StartaNu
 
       ####################### SLUT PÅ FUNKTIONER #################
 
+      ##################### BEHÅLLARE ############################3
+
+      rule :lista do
+        match("skapa",:identifierare, "Lista", "=", :listitem) { |_, name, _, _, items| Deklarering.new(name, Lista.new(items) ) }
+        match("skapa",:identifierare, "Lista") { |_,name,_| Deklarering.new(name, Lista.new()) }
+      end
+
+      rule :listitem do
+        
+        match(:aritm_uttryck, ",", :listitem) do |item, _, items|
+          items += [item]
+          items
+        end
+        match(:aritm_uttryck)
+      end
+
+      ################### SLUT PÅ BEHÅLLARE #####################
+              
       rule :uttry do      
         match(:logiskt_uttryck)
-        match(:aritm_uttryck) 
+        match(:aritm_uttryck)
         match(:identifierare)
       end
       
@@ -273,28 +294,17 @@ end
 sn = StartaNu.new
 
 sn.run(true){'
-skapa hej = 5
-skapa tja
-tja = 7
-skriv "Testar"
+
+skapa hej Lista
+skapa hh = 5
+lägg till 7 hej
+lägg till 8 hej
 skriv hej
-hej = hej + 1
-skriv hej
-
-skapa tjena = 1
-tjena = tjena + tjena + hej + tjena + tja
-skriv tjena
-
-medans hej < 8
-start
-skriv "medans loop"
-hej = hej + 1
-slut
-
-om hej == 5
-start
-skriv "WOW, 2 är 2"
-slut
+skapa listan Lista
+lägg till 234 listan
+skriv listan
+skapa t Lista = 5,6
+skriv "hej"
 '}
 
 =begin

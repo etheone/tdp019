@@ -56,7 +56,7 @@ StartaNu
 		skriv i
 	slut
 
-
+	skapa listan Lista
 
 	# Språket ska ha stöd för två typer av behållare,
 	# dynamisk lista och hashtabell (parlista)
@@ -81,3 +81,18 @@ StartaNu
 
 
 SlutaNu
+
+
+
+
+
+
+
+
+
+
+match(:alist) { Lista.new(which_list)
+lista[0] = 5
+hej = lista[3]
+
+
