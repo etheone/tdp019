@@ -50,37 +50,77 @@ class StartaNu
         match(:loop) { |loop| [loop]}
         match(:om) { |om| [om] }
         match(:skriv) {|skriv| [skriv]}
-        #match(:funktion)
+        #match(:funktion) deklarera?
+        #match(:funktion) call?
         match(:deklarering) { |deklarering| [deklarering] }
         match(:tilldelning) { |tilldelning| [tilldelning] }  
         match(:nyrad) {|nyrad| [nyrad]}
       end
 
       rule :loop do
-        match("för", :identifierare, :heltal, "till", :heltal, :nyrad, "start", :nyrad, :satser, "slut") { |_,var_namn,start,_,slut,_,_,_,satser,_| ForLoop.new(var_namn,start,slut,Satser.new(satser))}
-        match("medans", :jamforelse, :nyrad, "start", :nyrad, :satser, "slut") { |_, jamforelse,_,_,_,satser,_ | MedansLoop.new(jamforelse, Satser.new(satser))}
+        match(:for)
+        match(:medans)
       end
 
+
+      ############# UTRSKRIFT ###############
+
+      rule :skriv do
+        # Matchar till en början bara utskrift av en sträng
+        match('skriv', :strang) { |_, skriv|
+          SkrivUt.new(skriv) }
+        match('skriv', :uttry) { |_, att_skriva_ut| SkrivUt.new(att_skriva_ut) }
+      end
+
+      ############ SLUT PÅ UTSKRIFT ##################
+
+      #################### LOOPS #####################
+      rule :for do
+        match("för", :identifierare, :heltal, "till", :heltal, :nyrad, "start", :nyrad,
+              :satser, "slut") { |_,var_namn,start,_,slut,_,_,_,satser,_|
+          ForLoop.new(var_namn,start,slut,Satser.new(satser))}
+        match("för", :heltal, "till", :heltal, :nyrad, "start", :nyrad,
+              :satser, "slut") { |_,start,_,slut,_,_,_,satser,_|
+          ForLoop.new(start,slut,Satser.new(satser))}
+      end
+
+      rule :medans do
+        match("medans", :logiskt_uttryck, :nyrad, "start", :nyrad, :satser, "slut") { |_, jamforelse,
+          _,_,_,satser,_ | MedansLoop.new(jamforelse, Satser.new(satser)) }
+      end
+
+      ############## SLUT PÅ LOOPS ##################
+
+      ############## START PÅ OM ###################
+      
+
       rule :om do
-        match("om", :logiskt_uttryck, :nyrad, "start", :nyrad, :satser, "slut") { |_, l_ut, _, _, _, satser, _| Om.new(l_ut, Satser.new(satser)) }
-        match("om", :logiskt_uttryck, :nyrad, "start", :nyrad, :satser, :annars_kropp, "slut") { |_, l_ut, _, _, _, satser, annars_kropp, _ | Om.new(l_ut, Satser.new(satser), annars_kropp) }
+        match("om", :logiskt_uttryck, :nyrad, "start", :nyrad, :satser, "slut") { |_, l_ut, _, _, _,
+          satser, _| Om.new(l_ut, Satser.new(satser)) }
+        match("om", :logiskt_uttryck, :nyrad, "start", :nyrad, :satser, :annars_kropp, "slut") { |_, l_ut, _,
+          _, _, satser, annars_kropp, _ | Om.new(l_ut, Satser.new(satser), annars_kropp) }
+        #todo match annars om? *************************************************************
       end
 
       rule :annars_kropp do
         match("annars", :satser) { |_,satser| Satser.new(satser) }
       end
 
+      ############# SLUT PÅ OM ####################
+
       ###################### Variabeldeklarering / tilldelning #######
       rule :deklarering do
-        match("skapa",:identifierare,"=",:uttryck) { |_, name, _, value| Deklarering.new(name,value) }
+        match("skapa",:identifierare,"=",:uttry) { |_, name, _, value| Deklarering.new(name,value) }
         match("skapa",:identifierare) { |_, name| Deklarering.new(name) }
       end
 
       rule :tilldelning do
-        match(:identifierare,"=",:uttryck) { |name, _, value| Tilldelning.new(name, value) }
-
+        match(:identifierare,"=",:uttry) { |name, _, value| Tilldelning.new(name, value) }
       end
 
+
+      ################# FUNKTIONER #########################
+      
       rule :funktion do
         match("skapa metoden", :identifierare, :parameter_lista, :nyrad, "start", :nyrad, :satser, "slut")
         match("skapa metoden", :identifierare, :nyrad, :satser, "slut")
@@ -91,25 +131,28 @@ class StartaNu
         match(:identifierare)
       end
 
-      rule :uttryck do      
-        match(:logiskt_uttryck) # Kanske ska vara här, borttaget pga stack level to deep
+
+      ####################### SLUT PÅ FUNKTIONER #################
+
+      rule :uttry do      
+        match(:logiskt_uttryck)
         match(:aritm_uttryck) 
-        match(:identifierare) 
-        #match(:f_anrop)
+        match(:identifierare)
       end
       
-
       rule :identifierare do
-        #match(:variabel)
-        match(:name)
+        match(/[a-zA-Z0-9]+/) {|name| name }
       end
 
-      # Här är det nog lite fel..........
       rule :logiskt_uttryck do
-        #match(:jamforelse)
-        match(:logiskt_uttryck, :logisk_operator, :logiskt_uttryck) { |uttr1, op, uttr2| LogisktUttryck.new(uttr1, LogiskOperator.new(op), uttr2) }
-        match(:jamforelse)
+        match(:logiskt_uttryck, :logisk_operator, :logiskt_uttryck) { |uttr1, op, uttr2|
+          LogisktUttryck.new(uttr1, LogiskOperator.new(op), uttr2) }
+        match(:jamforelse, :jamf_operator, :jamforelse) { |u1,op,u2|
+          Jamforelse.new(u1, JamfOperator.new(op), u2) }
+      end
 
+      rule :jamforelse do
+        match(:aritm_uttryck)
       end
 
       rule :logisk_operator do
@@ -117,10 +160,11 @@ class StartaNu
         match("eller")
         match("inte är") # Denna funkar inte, är inte implementerad
       end
-      
-      rule :jamforelse do
-        match(:uttryck, :jamf_operator, :uttryck) { |u1,op,u2| Jamforelse.new(u1, JamfOperator.new(op), u2) }
-      end
+
+        #*********************************VAD ÄR SKILLNADEN PÅ ETT LOGISKT UTTRYCK OCH EN JÄMFÖRELSE?********
+        #****************************ENDAST LOGISKT UTTRYCK SOM BALLAR UR******************************
+        #****************** OK SAKER BÖRJAR FUNGERA... Dock problem med tilldelning?? Ex: hej = hej + 1*****
+        #***** Om, medans, for loop och skapa variabel fungerar iaf*****
 
       rule :jamf_operator do
         match("<")
@@ -159,10 +203,6 @@ class StartaNu
         match(:heltal)
         match(:flyttal)
         match(:strang)
-        
-        #match(Integer) { |int| int }
-        #match(:varde,:siffra) { |varde, siffra| puts "In rule :varde"}
-        #match("-", :varde) { |_, varde| varde * (-1)}
       end
 
       rule :bool do
@@ -180,23 +220,13 @@ class StartaNu
 
       rule :strang do
         match(/\".+\"/) { |strang| Varde.new(strang[1..-2]) }
-      end
-
-      ####################### Skriv / print #############
-      rule :skriv do
-        # Matchar till en början bara utskrift av en sträng
-        match('skriv', :strang) { |_, skriv|
-          SkrivUt.new(skriv) }
-        match('skriv', :uttryck) { |_, att_skriva_ut| SkrivUt.new(att_skriva_ut) }
-      end
-      ###################### Slut skriv / print ########
-
-      rule :name do
-        match(/[\wåäöÅÄÖ]+/) {|name| name }
+        match(:identifierare)
       end
     end
   end    
-  
+
+
+  ######################## END OF BNF ##########################
   def done(str)
     ["quit","exit","bye",""].include?(str.chomp)
   end
@@ -241,76 +271,14 @@ end
 # Testkörningar
 #=begin
 sn = StartaNu.new
+
 sn.run(true){'
-#skapa hej = 5
-
-om 5 > 1
-start
-skriv "hehehehehehe"
-slut
-'}
-=begin
-sn.run(true){'
-
-
-
-skapa hej = 4
-för i 5 till 10
-start
-skriv hej
-
-slut
-'}
-=end
-=begin
-sn.run(true) {'skriv "hej world"
-
-skriv "massa"
 skapa hej = 5
-skapa tjena
-tjena = "Vad säger du nu då"
-skriv hej
 
-om 1 == 1
+
+medans hej < 8
 start
-skapa tja = 10
-skriv "Vi testar"
+skriv "medans loop"
+hej = hej + 1
 slut
-skriv "Vi testar efter att ett scope har avslutats"
-
-
-#456 + 3
-#"ska vi leka" + " nu?"
-
-4 * 3 + 10
-skriv "Testar 5 == 5"
-5 == 5
-skriv "Testar 0 == 1"
-0 == 1
-
-skriv "Testar 1 <= 0"
-1 <= 0
-
-skriv "Testar 1 >= 0"
-1 >= 0
-
-skriv "Testar 0 >= 1"
-0 >= 1
-
-skriv "Testar 1 != 0"
-1 != 0
-
-skriv "Testar 1 != 1"
-1 != 1
-#2 * 5
-#100.0 / 3.0
-skriv "hej igen"'}
-=end
-#puts sn.run(true) {"(1 + 4)*5
-#"}
-#puts sn.run(true) {"a
-#"}
-#puts sn.run(true) {'skriv "hej på dig"
-#'}
-#=end
-
+'}

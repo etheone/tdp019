@@ -10,13 +10,14 @@ class Scope
 
   def add_variable(name, value)
     @variables[name] = value
-    #puts "\n ¤&¤&¤&¤&¤&&¤&¤&¤& #{@variables[name].eval()} ¤¤¤¤#%#%#¤# \n"
+   
   end
 
   def get_variable(name)
-    puts @variables
+    #puts @variables
     puts name
-    puts "#{@variables[name]} ''''''''''''''''''''''''"
+    puts "DEBUG: GETTING VARIABLE"
+   # puts "#{@variables[name]} ''''''''''''''''''''''''"
     if @variables.has_key?(name)
       return @variables[name]
     elsif @previous_scope != nil
@@ -28,6 +29,7 @@ class Scope
   end
 
   def change_variable(name, value)
+    puts "DEBUG: CHANGING VARIABLE"
     if @variables.has_key?(name)
       @variables[name] = value
     elsif @previous_scope != nil
@@ -57,7 +59,7 @@ class Satser
   end
 
   def eval()
-    
+    puts "DEBUG: EVALUERAR SATSER"
     @@nuvarande_scope = Scope.new(@@nuvarande_scope)
     
     @satser.each_index do | index |
@@ -79,17 +81,17 @@ class SkrivUt
 
   def eval()
     if @att_skriva_ut.class != String
-      puts "Inte en String"
+      puts "DEBUG: Inte en String"
       puts @att_skriva_ut.eval()
     else
       puts "#{@@nuvarande_scope.get_variable(@att_skriva_ut).eval()}"
     end
-    puts "*********** variabler i  @@nuvarande_scope ****************"
-    puts "#{@@nuvarande_scope.variables}"
+    puts "DEBUG variabler i  @@nuvarande_scope DEBUG"
+   # puts "#{@@nuvarande_scope.variables}"
     if @@nuvarande_scope.previous_scope == nil
-      puts "Previous är nil"
+      puts "DEBUG: Previous är nil"
     else
-      puts "********* variabler i previous_scope *****************"
+      puts "DEBUG variabler i previous_scope DEBUG"
       puts "#{@@nuvarande_scope.previous_scope.variables}"
     end
   end
@@ -102,7 +104,8 @@ class Varde
   end
 
   def eval()
-    #puts "Värdet på Varde: #{@varde}"
+    puts "DEBUG: EVALUERAR VÄRDE"
+    puts "Värdet på Varde: #{@varde}"
     return @varde
   end
 end
@@ -116,6 +119,7 @@ class AritmUttryck
   end
 
   def eval()
+    puts "DEBUG: EVALUERAR ARITM UTTRYCK"
     temp_h = @h_uttryck
     temp_v = @v_uttryck
     puts "#{temp_v} **************************************************"
@@ -141,12 +145,14 @@ class AritmOperator
   end
 
   def eval(uttryck1, uttryck2)
+    puts "DEBUG: UTFÖR ARITM BERÄKNING VARIABLE"
     case @operator
     when '+'
       puts "#{uttryck1.class} #{uttryck2.class}"
       #exit()
       return uttryck1.eval() + uttryck2.eval()
     when '-'
+      puts "#{uttryck1.class} #{uttryck2.class}"
       return uttryck1.eval() - uttryck2.eval()
     when '*'
       return uttryck1.eval() * uttryck2.eval()
@@ -318,7 +324,7 @@ end
 
 class ForLoop
   attr_accessor :var_namn, :start, :slut, :satser
-  def initialize(var_namn,start,slut,satser)
+  def initialize(var_namn = nil,start,slut,satser)
     @var_namn = var_namn
     @start = start.eval()
     @slut = slut.eval()
