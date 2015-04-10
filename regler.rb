@@ -19,6 +19,7 @@ class StartaNu
       token(/skapa metoden/)
       token(/inte är/)
       token(/lägg till/) { |m| m }
+      token(/ta bort/) { |m| m }
       token(/-?\d+\.\d+/) { |flyttal| puts "Hitta ett flyttal"; flyttal.to_f } #Matcha flyttal
       token(/-?\d+/) { |heltal| heltal.to_i } # Matcha heltal
       #token(/\".+\"/) { |m| m} # Matcha strängar
@@ -142,15 +143,16 @@ class StartaNu
       rule :lista do
         match("skapa",:identifierare, "Lista", "=", :listitem) { |_, name, _, _, items| Deklarering.new(name, Lista.new(items) ) }
         match("skapa",:identifierare, "Lista") { |_,name,_| Deklarering.new(name, Lista.new()) }
+        match("ta bort", :aritm_uttryck, :identifierare) { |_, value, list_name| TaBortVardeILista.new(list_name, value) }
       end
 
       rule :listitem do
-        
-        match(:aritm_uttryck, ",", :listitem) do |item, _, items|
+        match(:aritm_uttryck) {| a | [a]}
+        match(:listitem, ",", :aritm_uttryck) do |items, _, item|
           items += [item]
           items
         end
-        match(:aritm_uttryck)
+        
       end
 
       ################### SLUT PÅ BEHÅLLARE #####################
@@ -295,16 +297,11 @@ sn = StartaNu.new
 
 sn.run(true){'
 
-skapa hej Lista
-skapa hh = 5
-lägg till 7 hej
-lägg till 8 hej
-skriv hej
-skapa listan Lista
-lägg till 234 listan
-skriv listan
-skapa t Lista = 5,6
-skriv "hej"
+skapa lista Lista
+skapa list Lista = 4, 5, 6, 7
+ta bort 6 list
+ta bort 7 list
+skriv "heheheheh"
 '}
 
 =begin

@@ -368,14 +368,22 @@ end
 class Lista
   attr_accessor :array
   def initialize(value = [])
-    @temp = []
-    @temp << value
-    puts "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX DEBUG: INITIERAR LISTA #{value.eval()}"
+    @array = []
+    #puts "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX DEBUG: INITIERAR LISTA #{value.eval()}"
     if value != []
-      @array = @temp
+      1.upto(value.length) { |i|
+        if value[i-1].class == Varde
+          @array << value[i-1].eval()
+        else
+          @array << value[i-1]
+        end
+      }          
     else
-      @array = @temp
+      @array
     end
+  end
+
+  def add_value()
   end
 
   def eval()
@@ -391,7 +399,7 @@ class ParLista
 end
 
 class LaggTillILista
-  attr_accessor
+  attr_accessor 
   def initialize(name, value, key=nil)
     @list_name = name
     @key = key
@@ -407,6 +415,22 @@ class LaggTillILista
     else
       return "ERROR: LISTERROR"
     end
+  end
+end
+
+class TaBortVardeILista
+  attr_accessor :list_name, :value
+  def initialize(list_name, value, parlist = false)
+    @list_name = list_name
+    @value = value
+  end
+
+  def eval()
+    array = @@nuvarande_scope.get_variable(@list_name.name).eval()
+    array = array - [value.eval()]
+    puts array
+    
+    @@nuvarande_scope.change_variable(@list_name.name, Lista.new(array))
   end
 end
 

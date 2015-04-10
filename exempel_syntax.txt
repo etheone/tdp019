@@ -85,14 +85,20 @@ SlutaNu
 
 
 
+ta bort 6 <listan>
+ta bort <listan>[2]
 
+<listan>[2] = 5
 
+fila på skriva ut lista
 
 
 
 
 match(:alist) { Lista.new(which_list)
-lista[0] = 5
-hej = lista[3]
+lista[3] = 17
+skapa hej -> lista[3]
+lista[3] = 5
+skriv lista[3]
 
 
