@@ -141,7 +141,7 @@ class StartaNu
       end
       
       rule :identifierare do
-        match(/[a-zA-Z0-9]+/) {|name| name }
+        match(/[a-zA-Z0-9]+/) {|name| Variabel.new(name) }
       end
 
       rule :logiskt_uttryck do
@@ -274,6 +274,31 @@ sn = StartaNu.new
 
 sn.run(true){'
 skapa hej = 5
+skapa tja
+tja = 7
+skriv "Testar"
+skriv hej
+hej = hej + 1
+skriv hej
+
+skapa tjena = 1
+tjena = tjena + tjena + hej + tjena + tja
+skriv tjena
+
+medans hej < 8
+start
+skriv "medans loop"
+hej = hej + 1
+slut
+
+om hej == 5
+start
+skriv "WOW, 2 är 2"
+slut
+'}
+
+=begin
+skapa hej = 5
 
 
 medans hej < 8
@@ -281,4 +306,4 @@ start
 skriv "medans loop"
 hej = hej + 1
 slut
-'}
+=end

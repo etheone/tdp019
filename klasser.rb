@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+@@debug = false
 
 class Scope
   attr_accessor :variables, :previous_scope
@@ -15,8 +15,7 @@ class Scope
 
   def get_variable(name)
     #puts @variables
-    puts name
-    puts "DEBUG: GETTING VARIABLE"
+    puts "DEBUG: GETTING VARIABLE" if @@debug
    # puts "#{@variables[name]} ''''''''''''''''''''''''"
     if @variables.has_key?(name)
       return @variables[name]
@@ -24,12 +23,12 @@ class Scope
       @previous_scope.get_variable(name)
     else
       puts "Something went wrong, variable doesn't exist"
-      return nil
+      return "No variable"
     end
   end
 
   def change_variable(name, value)
-    puts "DEBUG: CHANGING VARIABLE"
+    puts "DEBUG: CHANGING VARIABLE" if @@debug
     if @variables.has_key?(name)
       @variables[name] = value
     elsif @previous_scope != nil
@@ -59,7 +58,7 @@ class Satser
   end
 
   def eval()
-    puts "DEBUG: EVALUERAR SATSER"
+    puts "DEBUG: EVALUERAR SATSER" if @@debug
     @@nuvarande_scope = Scope.new(@@nuvarande_scope)
     
     @satser.each_index do | index |
@@ -81,17 +80,19 @@ class SkrivUt
 
   def eval()
     if @att_skriva_ut.class != String
-      puts "DEBUG: Inte en String"
+      puts "DEBUG: Inte en String" if @@debug
+      puts "DEBUG: #{@att_skriva_ut.class}" if @@debug
       puts @att_skriva_ut.eval()
+      puts "DEBUG ********************" if @@debug
     else
       puts "#{@@nuvarande_scope.get_variable(@att_skriva_ut).eval()}"
     end
-    puts "DEBUG variabler i  @@nuvarande_scope DEBUG"
+    puts "DEBUG variabler i  @@nuvarande_scope DEBUG" if @@debug
    # puts "#{@@nuvarande_scope.variables}"
     if @@nuvarande_scope.previous_scope == nil
-      puts "DEBUG: Previous är nil"
+      puts "DEBUG: Previous är nil" if @@debug
     else
-      puts "DEBUG variabler i previous_scope DEBUG"
+      puts "DEBUG variabler i previous_scope DEBUG" if @@debug
       puts "#{@@nuvarande_scope.previous_scope.variables}"
     end
   end
@@ -104,8 +105,7 @@ class Varde
   end
 
   def eval()
-    puts "DEBUG: EVALUERAR VÄRDE"
-    puts "Värdet på Varde: #{@varde}"
+    puts "DEBUG: EVALUERAR VÄRDE" if @@debug
     return @varde
   end
 end
@@ -119,11 +119,11 @@ class AritmUttryck
   end
 
   def eval()
-    puts "DEBUG: EVALUERAR ARITM UTTRYCK"
+    puts "DEBUG: EVALUERAR ARITM UTTRYCK" if @@debug
     temp_h = @h_uttryck
     temp_v = @v_uttryck
-    puts "#{temp_v} **************************************************"
-    puts "Testning: #{@h_uttryck.class} : #{@v_uttryck.class}"
+    puts "DEBUG #{temp_v} **************************************************" if @@debug
+    puts " DEBUG: Testning: #{@h_uttryck.class} : #{@v_uttryck.class}" if @@debug
     if @@nuvarande_scope.variables.has_key?(@v_uttryck)
       temp_v = @@nuvarande_scope.get_variable(@v_uttryck)
     end
@@ -131,7 +131,6 @@ class AritmUttryck
       temp_h = @@nuvarande_scope.get_variable(@h_uttryck)
     end
     result = @operator.eval(temp_v, temp_h)
-    puts result # Skriver ut värdet för testning, ska tas bort
     result
   end
 end
@@ -145,14 +144,14 @@ class AritmOperator
   end
 
   def eval(uttryck1, uttryck2)
-    puts "DEBUG: UTFÖR ARITM BERÄKNING VARIABLE"
+    puts "DEBUG: UTFÖR ARITM BERÄKNING VARIABLE" if @@debug
     case @operator
     when '+'
-      puts "#{uttryck1.class} #{uttryck2.class}"
+      #puts "#{uttryck1.class} #{uttryck2.class}"
       #exit()
       return uttryck1.eval() + uttryck2.eval()
     when '-'
-      puts "#{uttryck1.class} #{uttryck2.class}"
+      #puts "#{uttryck1.class} #{uttryck2.class}"
       return uttryck1.eval() - uttryck2.eval()
     when '*'
       return uttryck1.eval() * uttryck2.eval()
@@ -184,7 +183,7 @@ class Jamforelse
     #puts "Operator-class: #{@op.class}"
     #result = @v_uttryck.eval() > @h_uttryck.eval()
     result = @operator.eval(temp_v, temp_h)
-    puts "#{result}"
+    puts "DEBUG: #{result}" if @@debug
     return result
   end
 end
@@ -268,12 +267,9 @@ class Om
   end
 
   def eval()
-    puts "what"
     if @l_ut.eval()
-      puts "what2"
       @satser.eval()
     elsif @annars_satser != false
-      puts "annars"
       @annars_satser.eval()
     end
   end
@@ -282,7 +278,7 @@ end
 class Deklarering
   attr_accessor :name, :value
   def initialize(name, value = nil)
-    @name = name
+    @name = name.name
     @value = value
   end
 
@@ -294,28 +290,28 @@ class Deklarering
 end
 
 
-#class Variabel
-#  attr_accessor :name
-#  def initialize(name)
-#    @name = name
-#  end
+class Variabel
+  attr_accessor :name
+  def initialize(name)
+    @name = name
+  end
 
-#  def eval()
-#    @@nuvarande_scope.get_variable(@name)
-# end
-#end
+  def eval()
+    @@nuvarande_scope.get_variable(@name).eval()
+ end
+end
 
 
 class Tilldelning
   attr_accessor :name, :value
   def initialize(name, value)
-    @name = name
+    @name = name.name
     @value = value
   end
 
   def eval()
     # Ingen som helst felkontroll, måste kolla om variabeln är deklarerad
-    if @@nuvarande_scope.get_variable(@name) != nil
+    if @@nuvarande_scope.get_variable(@name) != "No variable"
       temp = Varde.new(@value.eval())
       @@nuvarande_scope.change_variable(@name, temp) 
     end
