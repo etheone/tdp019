@@ -16,7 +16,7 @@ class StartaNu
       token(/#.+/) # ignorera kommentarer
 
       
-      token(/skapa metoden/)
+      token(/skapa metoden/) { |m| m }
       token(/inte är/)
       token(/lägg till/) { |m| m }
       token(/ta bort/) { |m| m }
@@ -52,8 +52,8 @@ class StartaNu
         match(:loop) { |loop| [loop]}
         match(:om) { |om| [om] }
         match(:skriv) {|skriv| [skriv]}
-        #match(:funktion) deklarera?
-        #match(:funktion) call?
+        match(:funktion) { |funktion| [funktion] }
+        match(:funktionsanrop) #call?
         match(:deklarering) { |deklarering| [deklarering] }
         match(:tilldelning) { |tilldelning| [tilldelning] }  
         match(:nyrad) {|nyrad| [nyrad]}
@@ -125,14 +125,25 @@ class StartaNu
 
       ################# FUNKTIONER #########################
       
-      rule :funktion do
+      rule :funktion do        
         match("skapa metoden", :identifierare, :parameter_lista, :nyrad, "start", :nyrad, :satser, "slut")
-        match("skapa metoden", :identifierare, :nyrad, :satser, "slut")
+        match("skapa metoden", :identifierare, :nyrad, "start", :satser, "slut") { |_, name, _, _, satser, _| FunktionsDeklarering.new(name, Satser.new(satser)) }
+        match(:funktionsanrop)
+      end
+
+      rule :funktionsanrop do
+        match("kör", :identifierare, "med", :parameter_lista_anrop)
+        match("kör", :identifierare) { |_, name| FunktionsAnrop.new(name) }
       end
       
-      rule :parameter_lista do
+      rule :parameter_lista_deklarering do
         match(:identifierare, ",", :parameter_lista)
         match(:identifierare)
+      end
+
+      rule :parameter_lista_anrop do
+        match(:varde, ",", :parameter_lista)
+        match(:varde)
       end
 
 
@@ -296,11 +307,15 @@ end
 sn = StartaNu.new
 
 sn.run(true){'
+skapa metoden test
+start
+skriv "Det funka!"
+skapa h = 5
+slut
 
-skapa lista Lista
-skapa list Lista = 4, 5, 6, 7
-ta bort 6 list
-ta bort 7 list
+kör test
+kör test
+
 skriv "heheheheh"
 '}
 

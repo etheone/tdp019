@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-@@debug = true
+@@debug = false
 
 class Scope
   attr_accessor :variables, :previous_scope
@@ -428,10 +428,52 @@ class TaBortVardeILista
   def eval()
     array = @@nuvarande_scope.get_variable(@list_name.name).eval()
     array = array - [value.eval()]
-    puts array
+    print "DEBUG: #{array}" if @@debug
+    puts ""
     
     @@nuvarande_scope.change_variable(@list_name.name, Lista.new(array))
   end
 end
 
 ############# SLUT PÅ LISTOR #####################3
+
+############# FUNKTIONER #########################
+
+class FunktionsDeklarering
+  attr_accessor :name, :satser
+  def initialize(name, satser)
+    @name = name
+    @satser = satser
+  end
+
+  def eval()
+    # TODO - Ska endast kunna lägga till i global scope    
+    @@nuvarande_scope.add_variable(@name.name, @satser)
+  end
+
+end
+
+class ParameterLista
+  attr_accessor :params
+  def initialize(params)
+    @params = params
+  end
+
+  def eval()
+  end
+end
+
+class FunktionsAnrop
+  attr_accessor :name
+  def initialize(name)
+    @name = name
+  end
+
+  def eval()
+    puts "inne i funktionsanrop"
+    @@nuvarande_scope.get_variable(@name.name).eval()
+  end
+end
+
+
+############# SLUT PÅ FUNKTIONER #################
