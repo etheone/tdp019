@@ -98,15 +98,18 @@ class SkrivUt
       puts @att_skriva_ut.eval()
       puts "DEBUG ********************" if @@debug
     else
-      puts "#{@@nuvarande_scope.get_variable(@att_skriva_ut).eval()}"
+      puts "DEBUG: #{@@nuvarande_scope.get_variable(@att_skriva_ut).eval()}" if @@debug
     end
     puts "DEBUG variabler i  @@nuvarande_scope DEBUG" if @@debug
     puts "#{@@nuvarande_scope.variables}" if @@debug
+    puts "DEBUG: #{@@nuvarande_scope.variables}" if @@debug
+
     if @@nuvarande_scope.previous_scope == nil
       puts "DEBUG: Previous är nil" if @@debug
     else
       puts "DEBUG variabler i previous_scope DEBUG" if @@debug
       puts "#{@@nuvarande_scope.previous_scope.variables}" if @@debug
+      # puts "#{@@nuvarande_scope.previous_scope.variables}"
     end
   end
 end
@@ -396,9 +399,6 @@ class Lista
     end
   end
 
-  def add_value()
-  end
-
   def eval()
     @array
   end
@@ -406,8 +406,29 @@ end
 
 
 class ParLista
-  attr_accessor 
-  def initialize()
+  attr_accessor :hash
+  def initialize(hash=Hash.new)
+    @hash = Hash.new
+    puts "DEBUG: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX TRYING TO INITIATE PARLIST" if @@debug
+    hash.each do |k,v|
+      if k.class == Varde
+        @hash[k.eval()] = v.eval()
+      else
+        @hash[k] = v
+      end
+    end
+  end
+
+  def eval()
+    temp = Hash.new
+    @hash.each do |k,v|
+      if k.class == Varde
+        temp[k.eval()] = v.eval()
+      else
+        temp[k] = v
+      end
+    end
+    temp
   end
 end
 
@@ -423,11 +444,14 @@ class LaggTillILista
     listan = @@nuvarande_scope.get_variable(@list_name.name).eval()
     if @key == nil
       listan << @value.eval()
-    elsif
-      listan[@key] = @value.eval()
+    elsif @key != nil
+      puts "DEBUG: TRYING TO ADD SOMETHING TO PARLIST"
+      listan[@key.eval()] = @value.eval()
+      puts listan
     else
       return "ERROR: LISTERROR"
     end
+    @@nuvarande_scope.change_variable(@list_name.name, ParLista.new(listan))
   end
 end
 
@@ -440,14 +464,43 @@ class TaBortVardeILista
 
   def eval()
     array = @@nuvarande_scope.get_variable(@list_name.name).eval()
-    array = array - [value.eval()]
+    if array.class != Array
+      puts @value.eval()
+      array.delete(@value.eval())
+    else
+      array = array - [value.eval()]
+    end
     print "DEBUG: #{array}" if @@debug
     puts ""
-    
-    @@nuvarande_scope.change_variable(@list_name.name, Lista.new(array))
+    if array.class != Array
+      @@nuvarande_scope.change_variable(@list_name.name, ParLista.new(array))
+    else
+      @@nuvarande_scope.change_variable(@list_name.name, Lista.new(array))
+    end
   end
 end
 
+class AndraVardeILista
+  attr_accessor :list_name, :parlist, :value, :new_value
+  def initialize(name, value, new_value, parlist = false)
+    @list_name = name
+    @parlist = parlist
+    @value = value
+    @new_value = new_value
+  end
+
+  def eval()
+    puts "***************************'DEBUG: KOM HIIIIIIT*****************************"
+    array = @@nuvarande_scope.get_variable(@list_name.name).eval()
+    puts "***************************'DEBUG: KOM HIIIIIIT NR 2*****************************"
+    puts @value.class
+    puts @new_value.class
+    array[@value.eval()] = @new_value[0].eval()
+    puts "***************************'DEBUG: KOM HIIIIIIT NR 3*****************************"
+
+    @@nuvarande_scope.change_variable(@list_name.name, Lista.new(array))
+  end
+end
 ############# SLUT PÅ LISTOR #####################3
 
 ############# FUNKTIONER #########################
