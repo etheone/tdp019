@@ -57,13 +57,26 @@ class Satser
     @satser = satser
   end
 
-  def eval()
+  def eval(lokala_variabler = nil)
     puts "DEBUG: EVALUERAR SATSER" if @@debug
     @@nuvarande_scope = Scope.new(@@nuvarande_scope)
-    
-    @satser.each_index do | index |
-      puts "Index #{index}: #{@satser[index]}"
+
+    # Här kollar vi om det ska läggas till några lokala variabler till
+    # nuvarande scope
+    if lokala_variabler == nil
+      puts "DEBUG: inga lokalavariabler att addera till scopet" if @@debug
+    else
+      puts "DEBUG: Ska addera något till scopet!" if @@debug
+      lokala_variabler.each do |k, v|
+        #puts "#{k} : #{v}"
+        @@nuvarande_scope.add_variable(k, Varde.new(v))
+      end
     end
+    
+    #@satser.each_index do | index |
+    #  puts "Index #{index}: #{@satser[index]}"
+    #end
+    
     @satser.each do |sats|
       sats.eval()
     end
@@ -88,12 +101,12 @@ class SkrivUt
       puts "#{@@nuvarande_scope.get_variable(@att_skriva_ut).eval()}"
     end
     puts "DEBUG variabler i  @@nuvarande_scope DEBUG" if @@debug
-    puts "#{@@nuvarande_scope.variables}"
+    puts "#{@@nuvarande_scope.variables}" if @@debug
     if @@nuvarande_scope.previous_scope == nil
       puts "DEBUG: Previous är nil" if @@debug
     else
       puts "DEBUG variabler i previous_scope DEBUG" if @@debug
-      puts "#{@@nuvarande_scope.previous_scope.variables}"
+      puts "#{@@nuvarande_scope.previous_scope.variables}" if @@debug
     end
   end
 end
@@ -321,7 +334,7 @@ end
 class ForLoop
   attr_accessor :var_namn, :start, :slut, :satser
   def initialize(var_namn = nil,start,slut,satser)
-    @var_namn = var_namn
+    @var_namn = var_namn.name
     @start = start.eval()
     @slut = slut.eval()
     @satser = satser
@@ -335,8 +348,8 @@ class ForLoop
 
     #@@nuvarande_scope = Scope.new(@@nuvarande_scope)
     
-    @start.upto(@slut) do
-      @satser.eval()
+    @start.upto(@slut) do |i|
+      @satser.eval({@var_namn=>i})
     end
     #@@nuvarande_scope = @@nuvarande_scope.previous_scope
     
@@ -440,15 +453,17 @@ end
 ############# FUNKTIONER #########################
 
 class FunktionsDeklarering
-  attr_accessor :name, :satser
-  def initialize(name, satser)
+  attr_accessor :name, :satser, :params
+  def initialize(name, satser, params = nil)
     @name = name
     @satser = satser
+    @params = params
   end
 
   def eval()
-    # TODO - Ska endast kunna lägga till i global scope    
-    @@nuvarande_scope.add_variable(@name.name, @satser)
+    # TODO - Ska endast kunna lägga till i global scope
+
+    @@nuvarande_scope.add_variable(@name.name, [@params,@satser])
   end
 
 end
@@ -460,18 +475,33 @@ class ParameterLista
   end
 
   def eval()
+    puts "Inne i eval i parameterlista"
   end
 end
 
 class FunktionsAnrop
-  attr_accessor :name
-  def initialize(name)
+  attr_accessor :name, :args
+  def initialize(name, args = nil)
     @name = name
+    @args = args
   end
 
   def eval()
-    puts "inne i funktionsanrop"
-    @@nuvarande_scope.get_variable(@name.name).eval()
+    args_hash = Hash.new
+    
+    # Hämtar hem parametrarna till funktionen
+    funk_params = @@nuvarande_scope.get_variable(@name.name)[0]
+    # Kolla så att längderna på parametrar och argument stämmer
+    if funk_params.params.length != @args.params.length
+      puts "MAJOR ERROR!!! Mismatch args and params when calling funktion: #{@name.name}"
+    else
+      0.upto(@args.params.length - 1) do |i|
+        args_hash[funk_params.params[i].name] = @args.params[i].eval()
+        #puts "Funk: #{funk_params.params[i].name}"
+        #puts "Arg: #{@args.params[i].eval()}"
+      end
+    end
+    @@nuvarande_scope.get_variable(@name.name)[1].eval(args_hash)
   end
 end
 

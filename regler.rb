@@ -126,24 +126,37 @@ class StartaNu
       ################# FUNKTIONER #########################
       
       rule :funktion do        
-        match("skapa metoden", :identifierare, :parameter_lista, :nyrad, "start", :nyrad, :satser, "slut")
-        match("skapa metoden", :identifierare, :nyrad, "start", :satser, "slut") { |_, name, _, _, satser, _| FunktionsDeklarering.new(name, Satser.new(satser)) }
+        match("skapa metoden", :identifierare, :parameter_lista_deklarering, :nyrad, "start", :satser, "slut") {
+          |_, name, params, _, _, satser, _|
+          FunktionsDeklarering.new(name, Satser.new(satser), ParameterLista.new(params))
+        }
+        match("skapa metoden", :identifierare, :nyrad, "start", :satser, "slut") { |_, name, _, _, satser, _|
+          FunktionsDeklarering.new(name, Satser.new(satser)) }
         match(:funktionsanrop)
       end
 
       rule :funktionsanrop do
-        match("kör", :identifierare, "med", :parameter_lista_anrop)
-        match("kör", :identifierare) { |_, name| FunktionsAnrop.new(name) }
+        match("kör", :identifierare, "med", :parameter_lista_anrop) { | _, name, _, args|
+          FunktionsAnrop.new(name, ParameterLista.new(args)) }
+        match("kör", :identifierare) { |_, name|
+          FunktionsAnrop.new(name) }
       end
       
       rule :parameter_lista_deklarering do
-        match(:identifierare, ",", :parameter_lista)
-        match(:identifierare)
+        match(:identifierare) { |ident| [ident] }
+        match(:parameter_lista_deklarering, ',', :identifierare) { |params,_,param|
+          params += [param]
+          params
+        }
       end
 
       rule :parameter_lista_anrop do
-        match(:varde, ",", :parameter_lista)
-        match(:varde)
+        match(:varde) { |varde| [varde]}
+        match(:parameter_lista_anrop, ",", :varde) { |args, _, arg|
+          args += [arg]
+          args
+        }
+        
       end
 
 
@@ -152,9 +165,12 @@ class StartaNu
       ##################### BEHÅLLARE ############################3
 
       rule :lista do
-        match("skapa",:identifierare, "Lista", "=", :listitem) { |_, name, _, _, items| Deklarering.new(name, Lista.new(items) ) }
-        match("skapa",:identifierare, "Lista") { |_,name,_| Deklarering.new(name, Lista.new()) }
-        match("ta bort", :aritm_uttryck, :identifierare) { |_, value, list_name| TaBortVardeILista.new(list_name, value) }
+        match("skapa",:identifierare, "Lista", "=", :listitem) { |_, name, _, _, items|
+          Deklarering.new(name, Lista.new(items) ) }
+        match("skapa",:identifierare, "Lista") { |_,name,_|
+          Deklarering.new(name, Lista.new()) }
+        match("ta bort", :aritm_uttryck, :identifierare) { |_, value, list_name|
+          TaBortVardeILista.new(list_name, value) }
       end
 
       rule :listitem do
@@ -307,14 +323,23 @@ end
 sn = StartaNu.new
 
 sn.run(true){'
-skapa metoden test
+skapa metoden test var1, var2
 start
-skriv "Det funka!"
-skapa h = 5
+  skapa h = "En liten sträng för test"
+  skriv h
+  skriv var1
+skriv var2
+  skriv "Det funka!"
 slut
 
-kör test
-kör test
+skapa summa = 0
+för i 1 till 5
+start
+  summa = summa + i
+slut
+skriv summa
+
+kör test med "hej", 2
 
 skriv "heheheheh"
 '}
