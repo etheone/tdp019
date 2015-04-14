@@ -166,14 +166,12 @@ class StartaNu
       ##################### BEHÅLLARE ############################3
 
       rule :lista do
-<<<<<<< HEAD
         match("skapa",:identifierare, "Lista", "=", :listitem) { |_, name, _, _, items|
           Deklarering.new(name, Lista.new(items) ) }
         match("skapa",:identifierare, "Lista") { |_,name,_|
           Deklarering.new(name, Lista.new()) }
         match("ta bort", :aritm_uttryck, :identifierare) { |_, value, list_name|
           TaBortVardeILista.new(list_name, value) }
-=======
          match("skapa",:identifierare, "ParLista", "=", :parlistitem) { |_, name, _, _, items| Deklarering.new(name, ParLista.new(items) ) }
         match("skapa",:identifierare, "Lista", "=", :listitem) { |_, name, _, _, items| Deklarering.new(name, Lista.new(items) ) }
 
@@ -181,7 +179,6 @@ class StartaNu
         match("skapa",:identifierare, "ParLista") { |_, name, _, _, items| Deklarering.new(name, ParLista.new() ) }
         match("ta bort", :aritm_uttryck, :identifierare) { |_, value, list_name| TaBortVardeILista.new(list_name, value) }
         match(:identifierare, "[", :aritm_uttryck, "]", "=", :listitem) { |list_name, _, value, _, _, new_value | AndraVardeILista.new(list_name, value, new_value) }
->>>>>>> 88d2c4d4c008bba25f315f62c8c62ba6fbc00f8e
       end
 
       rule :listitem do
@@ -342,7 +339,6 @@ end
 sn = StartaNu.new
 
 sn.run(true){'
-<<<<<<< HEAD
 skapa metoden test var1, var2
 start
   skapa h = "En liten sträng för test"
@@ -360,7 +356,7 @@ slut
 skriv summa
 
 kör test med "hej", 2
-=======
+
 
 skapa tja ParLista = "hoj":"lol"
 skriv tja
@@ -370,7 +366,6 @@ skriv tja
 skriv "......."
 ta bort "hej" tja
 skriv tja
->>>>>>> 88d2c4d4c008bba25f315f62c8c62ba6fbc00f8e
 
 '}
 
