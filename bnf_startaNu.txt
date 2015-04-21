@@ -1,88 +1,125 @@
-Tommy Lindman - tomli962
+﻿Tommy Lindman - tomli962
 Emil Nilsson - emini901
 
 BNF-GRAMMAR
 
-<program> ::= startaNu <nyrad> <satser> slutaNu
-          | <satser>
+<program> 	::= startaNu <nyrad> <satser> slutaNu
+          	| <satser>
 
-<satser> ::= <sats> <nyrad>
-         | <satser> <sats>
+<satser>  	::= <sats> <nyrad>
+          	| <satser> <sats>
 
-<sats> ::= <loop>
-       | <om>
-       | <deklarering>
-       | <tilldelning>
-       | <funktion>
-       | <skriv>
-       | <nyrad>
+<sats>    	::= <loop>
+          	| <om>
+          	| <skriv>
+          	| <funktion>
+          	| <funktionsanrop>
+          	| <deklarering>
+	    	| <tilldelning>
+          	| <nyrad>
 
-<uttyck> ::= <jämförelse>
-         | <logiskt_uttryck>
-         | <aritm_uttryck>
-         | <identifierare>
-         | <f_anrop>
-         # Antagligen en massa mer saker
-         
-<loop> ::= för <identifierare> <heltal> till <heltal> <nyrad> start <nyrad> <satser> slut
-       | medans <jämförelse> <nyrad> start <nyrad> <satser> slut
+<loop>     	::= <for>
+		| <medans>
 
-<om> ::= om <logiskt_uttr> <nyrad> start <nyrad> <satser> [<annars_kropp>] slut
-<annars_kropp> ::= annars <nyrad> <satser>
+<uttry>  	::= <logiskt_uttryck>
+          	| <aritm_uttryck>
+          	| <identifierare>
+            
+<loop> 	::= för <identifierare> <heltal> till <heltal> <nyrad> start <nyrad> 		<satser> slut
+		| för <heltal> till <heltal> <nyrad> start <nyrad> <satser> slut
+       	| medans <logiskt_uttryck> <nyrad> start <nyrad> <satser> slut
 
-<deklarering> ::= skapa <identifierare> [= <uttryck>]
 
-<tilldelning> ::= <identifierare> = <uttryck>
+<om> 		::= om <logiskt_uttryck> <nyrad> start <nyrad> <satser> slut
+		| om <logiskt_uttryck> <nyrad> start <nyrad> <satser> <annars_kropp> 		slut
 
-<funktion> ::= skapa metoden <identifierare> [<parameter_lista>] <nyrad> start <nyrad> <satser> slut
+<annars_kropp> ::= annars <satser>
 
-<parameter_lista> ::= <identifierare> [ , <parameter_lista> ]
+<skriv>	::= skriv <strang>
+		| skriv <uttry>
 
-<identifierare> ::= <namn>
+<funktion> 	::= skapa metoden <identifierare> <parameter_lista_deklarering> 			<nyrad> start <satser> slut
+		| skapa metoden <identifierare> <nyrad> start <satser> slut
+		| <funktionsanrop>
 
-<name> ::= /[\wåäöÅÄÖ]+/
+<funktionsanrop> 	::= kör <identifierare> med <parameter_lista_anrop>
+			| kör <identifierare>
 
-<logiskt_uttryck> ::= <jämförelse>  [[<logisk_operator> <jämförelse>] <logisk_operator <logiskt_uttryck>]
+<parameter_lista_deklarering> ::= <identifierare>
+					| <parameter_lista_deklarering> , <identifierare> 
+
+<parameter_lista_anrop> ::= <varde>
+				| <parameter_lista_anrop> , <varde>
+
+
+<deklarering> 	::= <lista>
+			| skapa <identifierare> = <uttry>
+			| skapa <identifirare>
+
+
+
+
+<lista> 	::= skapa <identifierare> ParLista = <parlistitem>
+		| skapa <identifierare> Lista = <listitem>
+		| skapa <identifierare> ParLista
+		| skapa <identifierare> Lista
+		| ta bort <aritm_uttryck> <identifierare>
+		| <identifierare> [ <aritm_uttryck> ] = <listitem>
+
+<listitem>	::= <aritm_uttryck>
+		| <listitem> , <aritm_uttryck>
+
+<parlistitem> ::= <varde> : <varde>
+		  | <parlistitem> , <varde> : <varde>
+
+<tilldelning> ::= lägg till <aritm_uttryck> <identifierare>
+		  | lägg till <varde> : <varde> <identifierare>
+		  | <identifierare> = <uttry>
+
+<uttry>	::= <logiskt_uttryck>
+		| <aritm_uttryck>
+		| <identifierare>
+
+<logiskt_uttryck> ::= <logiskt_uttryck> <logisk_operator> <logiskt_uttryck>
+			| <jamforelse> <jamf_operator> <jamforelse>
 
 <logisk_operator> ::= och
-                  | eller
-                  | inte är
+			| eller
+			| inte är  (Används ej i nuläget)
 
-<jämförelse> ::= <uttryck> <jämf_operator> <uttryck>
+<jamforelse>	::= <aritm_uttryck>
 
-<jämf_operator> ::= < | > | => | =< | == | !=
+<jamf_operator>  	::= <
+			| >
+			| >=
+			| <=
+			| ==
+			| !=
+ 
+<aritm_uttryck> 	::= <aritm_uttryck> + <term>
+			| <aritm_uttryck> - <term>
+			| <term>
 
-<nyrad> ::= \n
+<term> 		::= <term> * <faktor>
+			| <term> / <faktor>
+			| <faktor>
 
-<aritm_uttryck> ::= <aritm_uttryck> + <term>
-                | <aritm_uttryck> - <term>
-                | <term>
+<faktor> 		::= ( <aritm_uttryck> )
+			| <varde>
 
-<term> ::= <term> * <faktor>
-       | <term> / <faktor>
-       | <faktor>
-       | ###### Borde sträng vara här?????? ############
+<varde>		::= <bool>
+			| <heltal>
+			| <flyttal>
+			| <strang>
 
-<faktor> ::= ( <aritm_uttryck> )
-         | <värde>
+<bool>		::= sant
+			| falskt
 
-<värde> ::= <bool>
-        | <heltal>
-        | <flyttal>
-        | <sträng>
+<heltal>		::= Integer
 
-<bool> ::= sant
-       | falskt
+<flyttal>		::= Float
 
-<heltal> ::= Integer
+<strang>		::= /\”.+\”/
+			| <identifierare>
 
-<flyttal> ::= Float
-
-<sträng> ::= /\".+\"/
-
-<skriv> ::= skriv <sträng> # Ska ändras till <uttryck>??
-
-
-
-############### Kvar är Listor och Parlistor ################
 

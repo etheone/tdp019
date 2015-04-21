@@ -1,4 +1,4 @@
-
+﻿
 ***** Hur ett program är tänkt att kunna se ut *****
 
 StartaNu
@@ -62,6 +62,9 @@ StartaNu
 	# dynamisk lista och hashtabell (parlista)
 
 	skapa <min_lista> = Lista 1,2,3,4,5
+skapa <min_lista> Lista = 0as0sda0dsa0
+skapa <min_parlista> ParLista = 
+
 	lägg till 6 <min_lista>
 	för varje nummer i <min_lista>
 	start
@@ -100,5 +103,17 @@ lista[3] = 17
 skapa hej -> lista[3]
 lista[3] = 5
 skriv lista[3]
+
+
+
+
+Kvar att göra: 
+
+* Iteratorer och mer åtkomst m.m för listor
+* Operatorer för strängar
+* Fler operatorer för aritmetiska uttryck (tror detta går enkelt att fixa)
+* 
+*
+
 
 

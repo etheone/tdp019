@@ -95,7 +95,7 @@ class SkrivUt
     if @att_skriva_ut.class != String
       puts "DEBUG: Inte en String" if @@debug
       puts "DEBUG: #{@att_skriva_ut.class}" if @@debug
-      puts @att_skriva_ut.eval()
+      puts "#{@att_skriva_ut.eval()}"
       puts "DEBUG ********************" if @@debug
     else
       puts "DEBUG: #{@@nuvarande_scope.get_variable(@att_skriva_ut).eval()}" if @@debug
@@ -126,6 +126,21 @@ class Varde
   end
 end
 
+#class StringUttryck
+#  attr_accessor :v_string, :operator, :h_string
+#  def initialize(v, op, h)
+#    @v_string = v
+#    @operator = op
+#    @h_string = h
+#  end
+
+#  def eval()
+#    puts "DEBUG: EVALUERAR BERÄKNING PÅ STRÄNG!" if @@debug
+#    puts "VSTRING: #{@v_string.class}     OPERATOR: #{@operator.class}       HSTRING: #{@h_string.class}"
+    
+#  end
+#end
+
 class AritmUttryck
   attr_accessor :h_uttryck, :operator, :v_uttryck
   def initialize(v, op, h)
@@ -138,14 +153,15 @@ class AritmUttryck
     puts "DEBUG: EVALUERAR ARITM UTTRYCK" if @@debug
     temp_h = @h_uttryck
     temp_v = @v_uttryck
-    puts "DEBUG #{temp_v} **************************************************" if @@debug
-    puts " DEBUG: Testning: #{@h_uttryck.class} : #{@v_uttryck.class}" if @@debug
+    puts "DEBUG #{temp_v} ************************************************** #{temp_h}" if @@debug
+    puts " DEBUG: Testning: #{@h_uttryck} : #{@v_uttryck}" if @@debug
     if @@nuvarande_scope.variables.has_key?(@v_uttryck)
       temp_v = @@nuvarande_scope.get_variable(@v_uttryck)
     end
     if @@nuvarande_scope.variables.has_key?(@h_uttryck)
       temp_h = @@nuvarande_scope.get_variable(@h_uttryck)
     end
+    puts "#{temp_v.eval()} and #{temp_h.eval()} <---------"
     result = @operator.eval(temp_v, temp_h)
     result
   end
@@ -161,6 +177,7 @@ class AritmOperator
 
   def eval(uttryck1, uttryck2)
     puts "DEBUG: UTFÖR ARITM BERÄKNING VARIABLE" if @@debug
+
     case @operator
     when '+'
       #puts "#{uttryck1.class} #{uttryck2.class}"
@@ -173,6 +190,10 @@ class AritmOperator
       return uttryck1.eval() * uttryck2.eval()
     when '/'
       return uttryck1.eval() / uttryck2.eval()
+    when '^'
+      return uttryck1.eval() ** uttryck2.eval()
+    when '%'
+      return uttryck1.eval() % uttryck2.eval()
     end
   end
 end
@@ -313,6 +334,7 @@ class Variabel
   end
 
   def eval()
+    puts "DEBUG (LINE 336 klasser.rb): VARIABLE IS: #{@name}"
     @@nuvarande_scope.get_variable(@name).eval()
  end
 end
@@ -409,7 +431,7 @@ class ParLista
   attr_accessor :hash
   def initialize(hash=Hash.new)
     @hash = Hash.new
-    puts "DEBUG: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX TRYING TO INITIATE PARLIST" if @@debug
+    puts "DEBUG: TRYING TO INITIATE PARLIST" if @@debug
     hash.each do |k,v|
       if k.class == Varde
         @hash[k.eval()] = v.eval()
@@ -434,24 +456,38 @@ end
 
 class LaggTillILista
   attr_accessor 
-  def initialize(name, value, key=nil)
+  def initialize(name, value, key=nil, more_to_add=nil)
     @list_name = name
     @key = key
     @value = value
+    @more_to_add = more_to_add
   end
 
   def eval()
     listan = @@nuvarande_scope.get_variable(@list_name.name).eval()
     if @key == nil
       listan << @value.eval()
+      if @more_to_add != nil
+        @more_to_add.each do |item|
+          puts "DEBUG: #{item.eval()}" if @@debug
+          listan << item.eval()
+        end
+      end
+      @@nuvarande_scope.change_variable(@list_name.name, Lista.new(listan))
     elsif @key != nil
-      puts "DEBUG: TRYING TO ADD SOMETHING TO PARLIST"
+      puts "DEBUG: TRYING TO ADD SOMETHING TO PARLIST" if @@debug
       listan[@key.eval()] = @value.eval()
-      puts listan
+      puts "DEBUG: #{@key.eval()} for key and #{@value.eval()} for value" if @@debug
+      if @more_to_add != nil
+        @more_to_add.each do |k,v|
+          puts "DEBUG: Key: #{k.eval()} and Value: #{v.eval()}" if @@debug
+          listan[k.eval()] = v.eval()
+        end
+      end
+      @@nuvarande_scope.change_variable(@list_name.name, ParLista.new(listan))
     else
       return "ERROR: LISTERROR"
     end
-    @@nuvarande_scope.change_variable(@list_name.name, ParLista.new(listan))
   end
 end
 
@@ -471,7 +507,6 @@ class TaBortVardeILista
       array = array - [value.eval()]
     end
     print "DEBUG: #{array}" if @@debug
-    puts ""
     if array.class != Array
       @@nuvarande_scope.change_variable(@list_name.name, ParLista.new(array))
     else
@@ -490,17 +525,37 @@ class AndraVardeILista
   end
 
   def eval()
-    puts "***************************'DEBUG: KOM HIIIIIIT*****************************"
-    array = @@nuvarande_scope.get_variable(@list_name.name).eval()
-    puts "***************************'DEBUG: KOM HIIIIIIT NR 2*****************************"
-    puts @value.class
-    puts @new_value.class
-    array[@value.eval()] = @new_value[0].eval()
-    puts "***************************'DEBUG: KOM HIIIIIIT NR 3*****************************"
-
-    @@nuvarande_scope.change_variable(@list_name.name, Lista.new(array))
+    listan = @@nuvarande_scope.get_variable(@list_name.name).eval()
+   
+    if listan.class == Array
+      puts "DEBUG: KOM HIIIIIIT NR 2" if @@debug
+      listan[@value.eval()] = @new_value[0].eval()
+      puts "DEBUG: KOM HIIIIIIT NR 3" if @@debug
+      @@nuvarande_scope.change_variable(@list_name.name, Lista.new(listan))
+    elsif listan.class == Hash
+      listan[@value.eval()] = @new_value[0].eval()
+      @@nuvarande_scope.change_variable(@list_name.name, ParLista.new(listan))
+    else
+      puts "AN ERROR SO MASSIVE THAT IT SHOULD NEVER HAPPEN"
+    end
+      
   end
 end
+
+class ListLoop
+  attr_accessor :list, :satser, :iterator1, :iterator2
+  def initialize(list_name, satser, iterator1, iterator2=nil)
+    @list = list_name
+    @satser = satser
+    @iterator1 = iterator1.eval()
+    @iterator2 = iterator2.eval() if iterator2 != nil
+  end
+
+  def eval()
+    puts "hej"
+  end
+end
+
 ############# SLUT PÅ LISTOR #####################3
 
 ############# FUNKTIONER #########################
@@ -557,6 +612,7 @@ class FunktionsAnrop
     @@nuvarande_scope.get_variable(@name.name)[1].eval(args_hash)
   end
 end
+
 
 
 ############# SLUT PÅ FUNKTIONER #################

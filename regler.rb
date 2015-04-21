@@ -24,15 +24,15 @@ class StartaNu
       token(/-?\d+/) { |heltal| heltal.to_i } # Matcha heltal
       #token(/\".+\"/) { |m| m} # Matcha strängar
       token(/\"[^\"]+\"/) { |m| m } # Ett nytt test att matcha strängar
-      token(/==/) { |m| m }
-      token(/<=/) { |m| m }
-      token(/>=/) { |m| m }
-      token(/!=/) { |m| m }
+      token(/==|<=|>=|!=/) { |m| m }
+      #token(/<=/) { |m| m }
+      #token(/>=/) { |m| m }
+      #token(/!=/) { |m| m }
       token(/startaNu/) { |m| m }
       token(/slutaNu/) { |m| m }
       token(/[\wåäöÅÄÖ]+/) { |m| m } # Matcha ord
       token(/./) { |m| m } # Matcha tecken
-
+      
       start :program do
         #match(:assign)
         #match(:expr)
@@ -55,7 +55,8 @@ class StartaNu
         match(:funktion) { |funktion| [funktion] }
         match(:funktionsanrop) #call?
         match(:deklarering) { |deklarering| [deklarering] }
-        match(:tilldelning) { |tilldelning| [tilldelning] }  
+        match(:tilldelning) { |tilldelning| [tilldelning] }
+        match(:uttry) { |uttryck|[uttryck]}
         match(:nyrad) {|nyrad| [nyrad]}
       end
 
@@ -69,15 +70,17 @@ class StartaNu
 
       rule :skriv do
         # Matchar till en början bara utskrift av en sträng
+        match('skriv', :uttry) { |_, att_skriva_ut| SkrivUt.new(att_skriva_ut) }
         match('skriv', :strang) { |_, skriv|
           SkrivUt.new(skriv) }
-        match('skriv', :uttry) { |_, att_skriva_ut| SkrivUt.new(att_skriva_ut) }
       end
 
       ############ SLUT PÅ UTSKRIFT ##################
 
       #################### LOOPS #####################
       rule :for do
+        #match("för varje", :identifierare, "i", :identifierare, "start", :satser, "slut") { |_,iterator,_, list_name,_,satser,_| ListLoop.new(list_name, Satser.new(satser),iterator) }
+        #match("för varje", :identifierare, ",", :identifierare, "i", :identifierare, "start", :satser, "slut") { |_,_,iterator1,_,iterator2,_,list_name,_,satser,_ | ListLoop.new(list_name, Satser.new(satser), iterator1, iterator2) }
         match("för", :identifierare, :heltal, "till", :heltal, :nyrad, "start", :nyrad,
               :satser, "slut") { |_,var_namn,start,_,slut,_,_,_,satser,_|
           ForLoop.new(var_namn,start,slut,Satser.new(satser))}
@@ -119,6 +122,9 @@ class StartaNu
 
       rule :tilldelning do
         match("lägg till", :aritm_uttryck, :identifierare) { |_,to_add,list_name| LaggTillILista.new(list_name, to_add ) }
+        match("lägg till", :aritm_uttryck, ",", :listitem, :identifierare) { |_,to_add,_,more_to_add,list_name| LaggTillILista.new(list_name, to_add, nil, more_to_add ) }
+        match("lägg till", :varde, ":", :varde, ",", :parlistitem, :identifierare) { |_,key_to_add, _,
+          value_to_add, _,more_to_add, list_name | LaggTillILista.new(list_name, value_to_add, key_to_add, more_to_add) }
         match("lägg till", :varde, ":", :varde, :identifierare) { |_, key_to_add, _, value_to_add, list_name | LaggTillILista.new(list_name, value_to_add, key_to_add) }
         match(:identifierare,"=",:uttry) { |name, _, value| Tilldelning.new(name, value) }
       end
@@ -166,18 +172,13 @@ class StartaNu
       ##################### BEHÅLLARE ############################3
 
       rule :lista do
-        match("skapa",:identifierare, "Lista", "=", :listitem) { |_, name, _, _, items|
-          Deklarering.new(name, Lista.new(items) ) }
-        match("skapa",:identifierare, "Lista") { |_,name,_|
-          Deklarering.new(name, Lista.new()) }
-        match("ta bort", :aritm_uttryck, :identifierare) { |_, value, list_name|
-          TaBortVardeILista.new(list_name, value) }
-         match("skapa",:identifierare, "ParLista", "=", :parlistitem) { |_, name, _, _, items| Deklarering.new(name, ParLista.new(items) ) }
+        match("skapa",:identifierare, "ParLista", "=", :parlistitem) { |_, name, _, _, items| Deklarering.new(name, ParLista.new(items) ) }
         match("skapa",:identifierare, "Lista", "=", :listitem) { |_, name, _, _, items| Deklarering.new(name, Lista.new(items) ) }
 
         match("skapa",:identifierare, "Lista") { |_,name,_| Deklarering.new(name, Lista.new()) }
         match("skapa",:identifierare, "ParLista") { |_, name, _, _, items| Deklarering.new(name, ParLista.new() ) }
         match("ta bort", :aritm_uttryck, :identifierare) { |_, value, list_name| TaBortVardeILista.new(list_name, value) }
+        
         match(:identifierare, "[", :aritm_uttryck, "]", "=", :listitem) { |list_name, _, value, _, _, new_value | AndraVardeILista.new(list_name, value, new_value) }
       end
 
@@ -187,7 +188,6 @@ class StartaNu
           items += [item]
           items
         end
-        
       end
 
       rule :parlistitem do
@@ -200,7 +200,7 @@ class StartaNu
 
       ################### SLUT PÅ BEHÅLLARE #####################
               
-      rule :uttry do      
+      rule :uttry do
         match(:logiskt_uttryck)
         match(:aritm_uttryck)
         match(:identifierare)
@@ -232,6 +232,8 @@ class StartaNu
         #****************** OK SAKER BÖRJAR FUNGERA... Dock problem med tilldelning?? Ex: hej = hej + 1*****
         #***** Om, medans, for loop och skapa variabel fungerar iaf*****
 
+
+      # EJ FÄRDIGIMPLEMENTERAT "FÖR VARJE" I LISTOR, BEHÖVER GÖRA OM LITEGRANN
       rule :jamf_operator do
         match("<")
         match(">")
@@ -245,6 +247,11 @@ class StartaNu
         match("\n") {|_| NyRad.new()}
       end
 
+      rule :stringuttryck do
+       # match(:strang, "+", :strang) { |string1,_,string2| StringUttryck.new(string1,"+",string2) }
+       # match(:strang, "-", :strang)
+      end
+
       rule :aritm_uttryck do
         match(:term, "+", :aritm_uttryck) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('+'),term2) }
         match(:aritm_uttryck, "-", :term) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('-'),term2) }
@@ -254,12 +261,14 @@ class StartaNu
       rule :term do
         match(:term, "*", :faktor) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('*'),term2)}
         match(:term, "/", :faktor) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('/'),term2)}
+        match(:term, "^", :faktor) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('^'),term2)}
+        match(:term, "%", :faktor) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('%'),term2)}
         match(:faktor) #{ |faktor| faktor }
         #{ |termm, _, faktor| termm * faktor }
       end
 
       rule :faktor do
-        match("(", :aritm_uttryck, ")") #{ |_, uttryck, _| uttryck }
+        match("(", :aritm_uttryck, ")")  { |_, uttryck, _| uttryck }
         match(:varde) #{ |varde| varde }
         # match(variabel)
       end
@@ -339,33 +348,33 @@ end
 sn = StartaNu.new
 
 sn.run(true){'
-skapa metoden test var1, var2
-start
-  skapa h = "En liten sträng för test"
-  skriv h
-  skriv var1
-skriv var2
-  skriv "Det funka!"
-slut
+skapa listan ParLista
+lägg till "okej":5, "apa":4, "hej":3 listan
+skriv listan
 
-skapa summa = 0
-för i 1 till 5
-start
-  summa = summa + i
-slut
-skriv summa
+skapa listen Lista = 3, 5, 7
+lägg till 4, 6, 8 listen
+skriv listen
+listen[2] = 10
+skriv listen
 
-kör test med "hej", 2
+listan["okej"] = 2
+skriv listan
+ta bort "okej" listan
+skriv listan
+
+skriv 5*5
+5^5
+skriv 5^5
+
+skriv 11%3
+
+skriv "Hejsan, jag heter..." + " emil"
+skapa hej = 5
+skriv hej
+skriv hej + 5
 
 
-skapa tja ParLista = "hoj":"lol"
-skriv tja
-lägg till "hej":5 tja
-skriv "........"
-skriv tja
-skriv "......."
-ta bort "hej" tja
-skriv tja
 
 '}
 
