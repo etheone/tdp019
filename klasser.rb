@@ -161,7 +161,7 @@ class AritmUttryck
     if @@nuvarande_scope.variables.has_key?(@h_uttryck)
       temp_h = @@nuvarande_scope.get_variable(@h_uttryck)
     end
-    puts "#{temp_v.eval()} and #{temp_h.eval()} <---------"
+    puts "#{temp_v.eval()} and #{temp_h.eval()} <---------" if @@debug
     result = @operator.eval(temp_v, temp_h)
     result
   end
@@ -180,11 +180,8 @@ class AritmOperator
 
     case @operator
     when '+'
-      #puts "#{uttryck1.class} #{uttryck2.class}"
-      #exit()
       return uttryck1.eval() + uttryck2.eval()
     when '-'
-      #puts "#{uttryck1.class} #{uttryck2.class}"
       return uttryck1.eval() - uttryck2.eval()
     when '*'
       return uttryck1.eval() * uttryck2.eval()
@@ -239,7 +236,7 @@ class JamfOperator
     when '>='
       return uttr1.eval() >= uttr2.eval()
     when '<'
-      puts "#{@@nuvarande_scope.variables}"
+      puts "#{@@nuvarande_scope.variables}" if @@debug
       return uttr1.eval() < uttr2.eval()
     when '<='
       return uttr1.eval() <= uttr2.eval()
@@ -260,7 +257,7 @@ class LogisktUttryck
   end
 
   def eval()
-    puts "#{@jamf1.eval()} #{@jamf2.eval()} #{@l_op.eval(@jamf1,@jamf2)}"
+    puts "#{@jamf1.eval()} #{@jamf2.eval()} #{@l_op.eval(@jamf1,@jamf2)}" if @@debug
     return @l_op.eval(@jamf1, @jamf2)
   end
 end
@@ -334,24 +331,47 @@ class Variabel
   end
 
   def eval()
-    puts "DEBUG (LINE 336 klasser.rb): VARIABLE IS: #{@name}"
+    puts "DEBUG (LINE 336 klasser.rb): VARIABLE IS: #{@name}" if @@debug
     @@nuvarande_scope.get_variable(@name).eval()
  end
 end
 
 
 class Tilldelning
-  attr_accessor :name, :value
-  def initialize(name, value)
+  attr_accessor :name, :value, :operator
+  def initialize(name, value = nil, op = nil)
     @name = name.name
     @value = value
+    @operator = op
   end
 
   def eval()
     # Ingen som helst felkontroll, måste kolla om variabeln är deklarerad
-    if @@nuvarande_scope.get_variable(@name) != "No variable"
-      temp = Varde.new(@value.eval())
-      @@nuvarande_scope.change_variable(@name, temp) 
+    if @operator == nil
+      if @@nuvarande_scope.get_variable(@name) != "No variable"
+        puts "#{@@nuvarande_scope.get_variable(@name).eval()} ***********************************" if @@debug
+        temp = Varde.new(@value.eval())
+        @@nuvarande_scope.change_variable(@name, temp)
+      end
+    else
+      if @@nuvarande_scope.get_variable(@name) != "No variable"
+        case @operator
+        when '+='
+          temp = Varde.new(@@nuvarande_scope.get_variable(@name).eval() + @value.eval())
+          puts temp if @@debug
+        when '-='
+          temp = Varde.new(@@nuvarande_scope.get_variable(@name).eval() - @value.eval())
+          puts temp if @@debug
+        when '*='
+          temp = Varde.new(@@nuvarande_scope.get_variable(@name).eval() * @value.eval())
+          puts temp if @@debug
+        when '/='
+          temp = Varde.new(@@nuvarande_scope.get_variable(@name).eval() / @value.eval())
+          puts temp if @@debug
+        end
+        puts "KOM HITEN DÅ" if @@debug
+        @@nuvarande_scope.change_variable(@name, temp)
+      end
     end
   end
 end
@@ -425,7 +445,6 @@ class Lista
     @array
   end
 end
-
 
 class ParLista
   attr_accessor :hash
@@ -501,7 +520,7 @@ class TaBortVardeILista
   def eval()
     array = @@nuvarande_scope.get_variable(@list_name.name).eval()
     if array.class != Array
-      puts @value.eval()
+      puts @value.eval() if @@debug
       array.delete(@value.eval())
     else
       array = array - [value.eval()]
@@ -545,14 +564,33 @@ end
 class ListLoop
   attr_accessor :list, :satser, :iterator1, :iterator2
   def initialize(list_name, satser, iterator1, iterator2=nil)
-    @list = list_name
+    @list = list_name.name
     @satser = satser
-    @iterator1 = iterator1.eval()
-    @iterator2 = iterator2.eval() if iterator2 != nil
+    @iterator1 = iterator1.name
+    @iterator2 = iterator2.name if iterator2 != nil
   end
 
   def eval()
-    puts "hej"
+    puts "DEBUG: list: #{@list}"
+    puts "DEBUG: satser: #{@satser.class}"
+    puts "DEBUG: iterator1: #{@iterator1}"
+    puts "DEBUG: iterator2: #{@iteratir2}"
+
+    # Hämta hem listan som vi ska iterera över
+    actual_list = @@nuvarande_scope.get_variable(list).eval()
+    puts "DEBUG: actual_list: #{actual_list}" if @@debug
+
+    # Kolla om det är en Array eller en Hash som ska itereras över
+    if actual_list.class == Array 
+      actual_list.each do | value |
+        satser.eval({@iterator1 => value})
+      end
+    else
+      puts "#{actual_list.class}" if @@debug
+      actual_list.each do | key, value |
+        satser.eval({@iterator1 => key, @iterator2 => value})
+      end
+    end 
   end
 end
 

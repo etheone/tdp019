@@ -20,11 +20,12 @@ class StartaNu
       token(/inte är/)
       token(/lägg till/) { |m| m }
       token(/ta bort/) { |m| m }
+      token(/för varje/) { |m| m }
       token(/-?\d+\.\d+/) { |flyttal| puts "Hitta ett flyttal"; flyttal.to_f } #Matcha flyttal
       token(/-?\d+/) { |heltal| heltal.to_i } # Matcha heltal
       #token(/\".+\"/) { |m| m} # Matcha strängar
       token(/\"[^\"]+\"/) { |m| m } # Ett nytt test att matcha strängar
-      token(/==|<=|>=|!=/) { |m| m }
+      token(/[=<>!\+\-\*\/]=/) { |m| m }
       #token(/<=/) { |m| m }
       #token(/>=/) { |m| m }
       #token(/!=/) { |m| m }
@@ -34,8 +35,7 @@ class StartaNu
       token(/./) { |m| m } # Matcha tecken
       
       start :program do
-        #match(:assign)
-        #match(:expr)
+
         match("startaNu",:nyrad,:satser,"slutaNu") {|_,_,satser,_| Satser.new(satser)}
         match(:satser) {|satser| Satser.new(satser)} # För tester och i interpretatorn
       end
@@ -56,7 +56,6 @@ class StartaNu
         match(:funktionsanrop) #call?
         match(:deklarering) { |deklarering| [deklarering] }
         match(:tilldelning) { |tilldelning| [tilldelning] }
-        match(:uttry) { |uttryck|[uttryck]}
         match(:nyrad) {|nyrad| [nyrad]}
       end
 
@@ -70,6 +69,7 @@ class StartaNu
 
       rule :skriv do
         # Matchar till en början bara utskrift av en sträng
+       # match('skriv', :strang, "+", :identifierare) {|_, skriv, _, var| SkrivUt.new(skriv) }
         match('skriv', :uttry) { |_, att_skriva_ut| SkrivUt.new(att_skriva_ut) }
         match('skriv', :strang) { |_, skriv|
           SkrivUt.new(skriv) }
@@ -79,8 +79,8 @@ class StartaNu
 
       #################### LOOPS #####################
       rule :for do
-        #match("för varje", :identifierare, "i", :identifierare, "start", :satser, "slut") { |_,iterator,_, list_name,_,satser,_| ListLoop.new(list_name, Satser.new(satser),iterator) }
-        #match("för varje", :identifierare, ",", :identifierare, "i", :identifierare, "start", :satser, "slut") { |_,_,iterator1,_,iterator2,_,list_name,_,satser,_ | ListLoop.new(list_name, Satser.new(satser), iterator1, iterator2) }
+        match("för varje", :identifierare, "i", :identifierare, :nyrad, "start", :nyrad, :satser, "slut") { | _, iterator, _, list_name, _, _, _, satser, _ | ListLoop.new(list_name, Satser.new(satser),iterator) }
+        match("för varje", :identifierare, ",", :identifierare, "i", :identifierare, :nyrad, "start", :nyrad, :satser, "slut") { | _, iterator1,_, iterator2, _, list_name, _, _, _,satser, _ | ListLoop.new(list_name, Satser.new(satser), iterator1, iterator2) }
         match("för", :identifierare, :heltal, "till", :heltal, :nyrad, "start", :nyrad,
               :satser, "slut") { |_,var_namn,start,_,slut,_,_,_,satser,_|
           ForLoop.new(var_namn,start,slut,Satser.new(satser))}
@@ -121,12 +121,20 @@ class StartaNu
       end
 
       rule :tilldelning do
+        match(:snabbtilldelning)
         match("lägg till", :aritm_uttryck, :identifierare) { |_,to_add,list_name| LaggTillILista.new(list_name, to_add ) }
         match("lägg till", :aritm_uttryck, ",", :listitem, :identifierare) { |_,to_add,_,more_to_add,list_name| LaggTillILista.new(list_name, to_add, nil, more_to_add ) }
         match("lägg till", :varde, ":", :varde, ",", :parlistitem, :identifierare) { |_,key_to_add, _,
           value_to_add, _,more_to_add, list_name | LaggTillILista.new(list_name, value_to_add, key_to_add, more_to_add) }
         match("lägg till", :varde, ":", :varde, :identifierare) { |_, key_to_add, _, value_to_add, list_name | LaggTillILista.new(list_name, value_to_add, key_to_add) }
         match(:identifierare,"=",:uttry) { |name, _, value| Tilldelning.new(name, value) }
+      end
+
+      rule :snabbtilldelning do
+        match(:identifierare, "+=", :uttry) {|name,op,value| Tilldelning.new(name, value, op) }
+        match(:identifierare, "-=", :uttry) {|name,op,value| Tilldelning.new(name, value, op) }
+        match(:identifierare, "*=", :uttry) {|name,op,value| Tilldelning.new(name, value, op) }
+        match(:identifierare, "/=", :uttry) {|name,op,value| Tilldelning.new(name, value, op) }
       end
 
 
@@ -247,11 +255,6 @@ class StartaNu
         match("\n") {|_| NyRad.new()}
       end
 
-      rule :stringuttryck do
-       # match(:strang, "+", :strang) { |string1,_,string2| StringUttryck.new(string1,"+",string2) }
-       # match(:strang, "-", :strang)
-      end
-
       rule :aritm_uttryck do
         match(:term, "+", :aritm_uttryck) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('+'),term2) }
         match(:aritm_uttryck, "-", :term) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('-'),term2) }
@@ -300,7 +303,6 @@ class StartaNu
     end
   end    
 
-
   ######################## END OF BNF ##########################
   def done(str)
     ["quit","exit","bye",""].include?(str.chomp)
@@ -310,6 +312,7 @@ class StartaNu
 #    log false
     if interactive
       #return @startaNuParser.parse yield
+      @startaNuParser.logger.level = Logger::WARN
       result = @startaNuParser.parse yield
       result.eval
       return
@@ -348,31 +351,75 @@ end
 sn = StartaNu.new
 
 sn.run(true){'
-skapa listan ParLista
-lägg till "okej":5, "apa":4, "hej":3 listan
-skriv listan
+skriv "Första raden"
+skapa lista Lista = 1, 2, 3, 4, 50, 100
+skriv lista
+för varje nummer i lista
+start
+  skriv "Kom igen"
+  skriv nummer
+slut
 
-skapa listen Lista = 3, 5, 7
-lägg till 4, 6, 8 listen
-skriv listen
-listen[2] = 10
-skriv listen
+skapa plista ParLista = "okej":5, "apa":4, "hej":3
+skriv plista
+för varje k, v i plista
+start
+  skriv "Inne i för varje plista"
+  skriv k
+  skriv v
+slut
 
-listan["okej"] = 2
-skriv listan
-ta bort "okej" listan
-skriv listan
+skapa namnet = " emil"
+skriv "hej jag heter" + namnet
 
-skriv 5*5
-5^5
-skriv 5^5
+skapa tjena = 2
+skriv tjena
+tjena +=2
+skriv tjena
 
-skriv 11%3
+tjena *=4
+skriv tjena
 
-skriv "Hejsan, jag heter..." + " emil"
-skapa hej = 5
-skriv hej
-skriv hej + 5
+skapa tja ParLista = "hoj":"lol"
+skriv tja
+lägg till "hej":5 tja
+skriv "........"
+skriv tja
+skriv "......."
+ta bort "hej" tja
+skriv tja
+
+skapa a = 5
+skriv "**********"
+skriv a
+skriv "**********"
+
+
+skapa metoden test var1, var2
+start
+  skapa h = "En liten sträng för test"
+  skriv h
+  skriv var1
+skriv var2
+  skriv "Det funka!"
+slut
+
+skapa summa = 0
+för i 1 till 5
+start
+  skriv "summa plus summa"
+  summa = summa + i
+slut
+skriv summa
+
+kör test med "hej", 2
+
+skapa i = 0
+medans i < 10
+start
+skriv i
+i += 1
+slut
 
 
 
