@@ -155,6 +155,7 @@ class StartaNu
           FunktionsAnrop.new(name, ParameterLista.new(args)) }
         match("kör", :identifierare) { |_, name|
           FunktionsAnrop.new(name) }
+        match(:builtinfuncs)
       end
       
       rule :parameter_lista_deklarering do
@@ -170,10 +171,20 @@ class StartaNu
         match(:parameter_lista_anrop, ",", :varde) { |args, _, arg|
           args += [arg]
           args
-        }
-        
+        }      
       end
 
+      rule :builtinfuncs do
+        match(:identifierare, ".", "längd") { |var, _, _| LengthFunc.new(var.name) }
+        match(:identifierare, ".", "storlek") { |var, _, _| LengthFunc.new(var.name) }
+        #match(:identifierare, ".", "dela", "(", :strang, ")") { |var, _, _, _,delim,_|
+         # DelaStrang.new(var.name, delim) }
+        #Finns många sätt att dela en sträng på, är detta verkligen nödvändigt?
+        match(:identifierare, ".", "till_strang") {  |var, _, strang| AndraTyp.new(var.name, strang) }
+        match(:identifierare, ".", "till_heltal") { |var, _, strang|  AndraTyp.new(var.name, strang) }
+        match(:identifierare, ".", "till_flyttal") { |var, _, strang| AndraTyp.new(var.name, strang) }
+        match(:identifierare, ".", "klass") { |var, _, _| GetKlass.new(var.name)  }
+      end
 
       ####################### SLUT PÅ FUNKTIONER #################
 
@@ -235,13 +246,6 @@ class StartaNu
         match("inte är") # Denna funkar inte, är inte implementerad
       end
 
-        #*********************************VAD ÄR SKILLNADEN PÅ ETT LOGISKT UTTRYCK OCH EN JÄMFÖRELSE?********
-        #****************************ENDAST LOGISKT UTTRYCK SOM BALLAR UR******************************
-        #****************** OK SAKER BÖRJAR FUNGERA... Dock problem med tilldelning?? Ex: hej = hej + 1*****
-        #***** Om, medans, for loop och skapa variabel fungerar iaf*****
-
-
-      # EJ FÄRDIGIMPLEMENTERAT "FÖR VARJE" I LISTOR, BEHÖVER GÖRA OM LITEGRANN
       rule :jamf_operator do
         match("<")
         match(">")
@@ -394,14 +398,17 @@ skriv "**********"
 skriv a
 skriv "**********"
 
-
+skapa grejjen = 5
 skapa metoden test var1, var2
 start
-  skapa h = "En liten sträng för test"
-  skriv h
   skriv var1
-skriv var2
+  skriv var2
+  om var2 < 7
+  start
+  kör test med "tjena", 8
   skriv "Det funka!"
+  slut
+
 slut
 
 skapa summa = 0
@@ -421,8 +428,49 @@ skriv i
 i += 1
 slut
 
+skapa arraysen Lista = 5,6,7,8
+skriv arraysen
+arraysen.längd
+
+skapa parraysen ParLista = "hej":5
+skriv parraysen
+parraysen.längd
+
+skapa numren = 5
+skriv numren
+numren.till_flyttal
+skriv numren
+
+skriv "          "
 
 
+skapa numrete = 5.0
+skriv numrete
+numrete.till_heltal
+skriv numrete
+skriv "             "
+skapa enString = "hejsan123"
+enString.klass
+enString.till_heltal
+skriv enString
+enString.klass
+skriv "             "
+skapa ettFlyt = 5.0
+skriv ettFlyt
+ettFlyt.till_strang
+skriv ettFlyt
+ettFlyt.klass
+skriv "             "
+skapa ettHel = 10
+ettHel.klass
+skriv ettHel
+ettHel.till_strang
+skriv ettHel
+ettHel.klass
+skriv "            "
+arraysen.till_strang
+skriv arraysen
+arraysen.klass
 '}
 
 =begin
