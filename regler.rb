@@ -8,7 +8,8 @@ class StartaNu
   
   def initialize(filnamn = nil)
     @fil = filnamn
-    @@current_scope = Scope.new(nil)
+    # Denna variabel används inte väl???????????????????
+    #@@current_scope = Scope.new(nil)
     @startaNuParser = Parser.new("Starta Nu!") do
       
      
@@ -27,9 +28,6 @@ class StartaNu
       #token(/\".+\"/) { |m| m} # Matcha strängar
       token(/\"[^\"]+\"/) { |m| m } # Ett nytt test att matcha strängar
       token(/[=<>!\+\-\*\/]=/) { |m| m }
-      #token(/<=/) { |m| m }
-      #token(/>=/) { |m| m }
-      #token(/!=/) { |m| m }
       token(/startaNu/) { |m| m }
       token(/slutaNu/) { |m| m }
       token(/[\wåäöÅÄÖ]+/) { |m| m } # Matcha ord
@@ -485,7 +483,16 @@ minStreng.till_flyttal
 skriv minStreng
 minStreng.klass
 
+skapa varen1 = 5
+skapa varen2 = 10
 
+skapa efternamn = "nilsson"
+
+skriv "hej " + 10+3
+
+skapa kanonvariabeln = "tjenare " + varen2
+skriv kanonvariabeln
+skriv "tjenare mannen " + varen2
 '}
 
 =begin

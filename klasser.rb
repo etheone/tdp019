@@ -146,6 +146,7 @@ class AritmUttryck
   end
 
   def eval()
+  
     puts "DEBUG: EVALUERAR ARITM UTTRYCK" if @@debug
     temp_h = @h_uttryck
     temp_v = @v_uttryck
@@ -173,7 +174,11 @@ class AritmOperator
 
   def eval(uttryck1, uttryck2)
     puts "DEBUG: UTFÖR ARITM BERÄKNING VARIABLE" if @@debug
-
+    if uttryck1.eval().class == String || uttryck2.eval().class == String
+      uttryck1 = Varde.new(uttryck1.eval().to_s) if uttryck2.eval().class == String
+      uttryck2 = Varde.new(uttryck2.eval().to_s) if uttryck1.eval().class == String
+    end
+      
     case @operator
     when '+'
       return uttryck1.eval() + uttryck2.eval()
@@ -342,7 +347,6 @@ class Tilldelning
   end
 
   def eval()
-    # Ingen som helst felkontroll, måste kolla om variabeln är deklarerad
     if @operator == nil
       if @@nuvarande_scope.get_variable(@name) != "No variable"
         puts "#{@@nuvarande_scope.get_variable(@name).eval()} ***********************************" if @@debug
