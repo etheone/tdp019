@@ -7,5 +7,6 @@ if fil != nil
   startanu = StartaNu.new(fil)
   startanu.start
 else
-  puts "Måste ange ett filnamn att köra!"
+  sn = StartaNu.new
+  sn.run
 end

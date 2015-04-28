@@ -315,7 +315,7 @@ class StartaNu
   end
   
   def run(interactive = false)
-#    log false
+    #log false
     if interactive
       #return @startaNuParser.parse yield
       @startaNuParser.logger.level = Logger::WARN

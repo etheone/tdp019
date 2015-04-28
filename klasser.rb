@@ -10,13 +10,11 @@ class Scope
 
   def add_variable(name, value)
     @variables[name] = value
-   
   end
 
   def get_variable(name)
     #puts @variables
     puts "DEBUG: GETTING VARIABLE" if @@debug
-   # puts "#{@variables[name]} ''''''''''''''''''''''''"
     if @variables.has_key?(name)
       return @variables[name]
     elsif @previous_scope != nil
@@ -80,7 +78,6 @@ class Satser
     @satser.each do |sats|
       sats.eval()
     end
-    
     @@nuvarande_scope = @@nuvarande_scope.previous_scope
   end
 end
@@ -109,7 +106,6 @@ class SkrivUt
     else
       puts "DEBUG variabler i previous_scope DEBUG" if @@debug
       puts "#{@@nuvarande_scope.previous_scope.variables}" if @@debug
-      # puts "#{@@nuvarande_scope.previous_scope.variables}"
     end
   end
 end
