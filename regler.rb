@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 require './rdparse'
 require './klasser'
+require './startaNuLibrary'
 
 
 class StartaNu
@@ -177,13 +178,14 @@ class StartaNu
       rule :builtinfuncs do
         match(:identifierare, ".", "längd") { |var, _, _| LengthFunc.new(var.name) }
         match(:identifierare, ".", "storlek") { |var, _, _| LengthFunc.new(var.name) }
-        #match(:identifierare, ".", "dela", "(", :strang, ")") { |var, _, _, _,delim,_|
-         # DelaStrang.new(var.name, delim) }
-        #Finns många sätt att dela en sträng på, är detta verkligen nödvändigt?
+        match(:identifierare, ".", "spräng", "(", :strang, ")") { |var, _, _, _,delim,_|
+          DelaStrang.new(var.name, delim) }
+        match(:identifierare, ".", "spräng") { |var, _, _,| DelaStrang.new(var.name) }
         match(:identifierare, ".", "till_strang") {  |var, _, strang| AndraTyp.new(var.name, strang) }
         match(:identifierare, ".", "till_heltal") { |var, _, strang|  AndraTyp.new(var.name, strang) }
         match(:identifierare, ".", "till_flyttal") { |var, _, strang| AndraTyp.new(var.name, strang) }
         match(:identifierare, ".", "klass") { |var, _, _| GetKlass.new(var.name)  }
+        
       end
 
       ####################### SLUT PÅ FUNKTIONER #################
@@ -327,7 +329,7 @@ class StartaNu
       puts "Bye."
     else
       puts "=> #{@startaNuParser.parse str}"
-      puts "Aktuella variabler: #{@@variables}"
+      #puts "Aktuella variabler: #{@@variables}"
       run
     end
   end
@@ -471,6 +473,19 @@ skriv "            "
 arraysen.till_strang
 skriv arraysen
 arraysen.klass
+
+skapa minStrang = "Hejsan jag heter Emil och studerar ibland"
+minStrang.spräng
+skriv minStrang
+minStrang.klass
+
+skriv "           "
+skapa minStreng = "56awd3.56awd4"
+minStreng.till_flyttal
+skriv minStreng
+minStreng.klass
+
+
 '}
 
 =begin
