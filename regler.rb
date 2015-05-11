@@ -3,13 +3,17 @@ require './rdparse'
 require './klasser'
 require './startaNuLibrary'
 
+######################################################################
+# Denna fil är inte uppkommenterad till 100% än    .                 #
+# I slutet av filen finns det ett antal tester på språket i nuläget. #
+######################################################################
+
 
 class StartaNu
   
   def initialize(filnamn = nil)
     @fil = filnamn
-    # Denna variabel används inte väl???????????????????
-    #@@current_scope = Scope.new(nil)
+
     @startaNuParser = Parser.new("Starta Nu!") do
       
      
@@ -23,7 +27,8 @@ class StartaNu
       token(/lägg till/) { |m| m }
       token(/ta bort/) { |m| m }
       token(/för varje/) { |m| m }
-      token(/-?\d+\.\d+/) { |flyttal| puts "Hitta ett flyttal"; flyttal.to_f } #Matcha flyttal
+      token(/avbryt loop/) { |m| m }
+      token(/-?\d+\.\d+/) { |flyttal| flyttal.to_f } #Matcha flyttal
       token(/-?\d+/) { |heltal| heltal.to_i } # Matcha heltal
       #token(/\".+\"/) { |m| m} # Matcha strängar
       token(/\"[^\"]+\"/) { |m| m } # Ett nytt test att matcha strängar
@@ -34,7 +39,6 @@ class StartaNu
       token(/./) { |m| m } # Matcha tecken
       
       start :program do
-
         match("startaNu",:nyrad,:satser,"slutaNu") {|_,_,satser,_| Satser.new(satser)}
         match(:satser) {|satser| Satser.new(satser)} # För tester och i interpretatorn
       end
@@ -51,9 +55,9 @@ class StartaNu
         match(:loop) { |loop| [loop]}
         match(:om) { |om| [om] }
         match(:skriv) {|skriv| [skriv]}
-        match(:funktion) { |funktion| [funktion] }
-        match(:funktionsanrop) #call?
         match(:deklarering) { |deklarering| [deklarering] }
+        match(:funktion) { |funktion| [funktion] }
+        match(:funktionsanrop) { |f_anrop| [f_anrop] } # Nytillagt, kanske ska tas bort?
         match(:tilldelning) { |tilldelning| [tilldelning] }
         match(:nyrad) {|nyrad| [nyrad]}
       end
@@ -61,17 +65,14 @@ class StartaNu
       rule :loop do
         match(:for)
         match(:medans)
+        match(:avbryt_loop)
       end
 
 
       ############# UTRSKRIFT ###############
 
       rule :skriv do
-        # Matchar till en början bara utskrift av en sträng
-       # match('skriv', :strang, "+", :identifierare) {|_, skriv, _, var| SkrivUt.new(skriv) }
         match('skriv', :uttry) { |_, att_skriva_ut| SkrivUt.new(att_skriva_ut) }
-        match('skriv', :strang) { |_, skriv|
-          SkrivUt.new(skriv) }
       end
 
       ############ SLUT PÅ UTSKRIFT ##################
@@ -83,9 +84,9 @@ class StartaNu
         match("för", :identifierare, :heltal, "till", :heltal, :nyrad, "start", :nyrad,
               :satser, "slut") { |_,var_namn,start,_,slut,_,_,_,satser,_|
           ForLoop.new(var_namn,start,slut,Satser.new(satser))}
-        match("för", :heltal, "till", :heltal, :nyrad, "start", :nyrad,
-              :satser, "slut") { |_,start,_,slut,_,_,_,satser,_|
-          ForLoop.new(start,slut,Satser.new(satser))}
+        #match("för", :heltal, "till", :heltal, :nyrad, "start", :nyrad, ###############
+        #      :satser, "slut") { |_,start,_,slut,_,_,_,satser,_| ###################### BORTTAGET!!!!!!!
+        #  ForLoop.new(start,slut,Satser.new(satser))} #################################
       end
 
       rule :medans do
@@ -93,6 +94,9 @@ class StartaNu
           _,_,_,satser,_ | MedansLoop.new(jamforelse, Satser.new(satser)) }
       end
 
+      rule :avbryt_loop do
+        match("avbryt loop") { |_| AvbrytLoop.new() }
+      end
       ############## SLUT PÅ LOOPS ##################
 
       ############## START PÅ OM ###################
@@ -103,7 +107,6 @@ class StartaNu
           satser, _| Om.new(l_ut, Satser.new(satser)) }
         match("om", :logiskt_uttryck, :nyrad, "start", :nyrad, :satser, :annars_kropp, "slut") { |_, l_ut, _,
           _, _, satser, annars_kropp, _ | Om.new(l_ut, Satser.new(satser), annars_kropp) }
-        #todo match annars om? *************************************************************
       end
 
       rule :annars_kropp do
@@ -115,11 +118,13 @@ class StartaNu
       ###################### Deklarering / tilldelning #######
       rule :deklarering do
         match(:lista)
+        match("skapa",:identifierare,"=",:funktionsanrop) { |_, name,_,value| Deklarering.new(name, value) }
         match("skapa",:identifierare,"=",:uttry) { |_, name, _, value| Deklarering.new(name,value) }
         match("skapa",:identifierare) { |_, name| Deklarering.new(name) }
       end
 
       rule :tilldelning do
+        match(:identifierare,"=",:funktionsanrop) { |name,_,value| Tilldelning.new(name, value) }
         match(:snabbtilldelning)
         match("lägg till", :aritm_uttryck, :identifierare) { |_,to_add,list_name| LaggTillILista.new(list_name, to_add ) }
         match("lägg till", :aritm_uttryck, ",", :listitem, :identifierare) { |_,to_add,_,more_to_add,list_name| LaggTillILista.new(list_name, to_add, nil, more_to_add ) }
@@ -138,7 +143,7 @@ class StartaNu
 
 
       ################# FUNKTIONER #########################
-      
+
       rule :funktion do        
         match("skapa metoden", :identifierare, :parameter_lista_deklarering, :nyrad, "start", :satser, "slut") {
           |_, name, params, _, _, satser, _|
@@ -147,6 +152,7 @@ class StartaNu
         match("skapa metoden", :identifierare, :nyrad, "start", :satser, "slut") { |_, name, _, _, satser, _|
           FunktionsDeklarering.new(name, Satser.new(satser)) }
         match(:funktionsanrop)
+        match("returnera", :uttry) { |_, uttryck| Returnera.new(uttryck) }
       end
 
       rule :funktionsanrop do
@@ -166,8 +172,8 @@ class StartaNu
       end
 
       rule :parameter_lista_anrop do
-        match(:varde) { |varde| [varde]}
-        match(:parameter_lista_anrop, ",", :varde) { |args, _, arg|
+        match(:uttry) { |varde| [varde]}
+        match(:parameter_lista_anrop, ",", :uttry) { |args, _, arg|
           args += [arg]
           args
         }      
@@ -262,7 +268,7 @@ class StartaNu
       rule :aritm_uttryck do
         match(:term, "+", :aritm_uttryck) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('+'),term2) }
         match(:aritm_uttryck, "-", :term) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('-'),term2) }
-        match(:term) #{ |t| t }
+        match(:term)
       end
 
       rule :term do
@@ -270,14 +276,12 @@ class StartaNu
         match(:term, "/", :faktor) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('/'),term2)}
         match(:term, "^", :faktor) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('^'),term2)}
         match(:term, "%", :faktor) { |term1,_,term2| AritmUttryck.new(term1,AritmOperator.new('%'),term2)}
-        match(:faktor) #{ |faktor| faktor }
-        #{ |termm, _, faktor| termm * faktor }
+        match(:faktor) 
       end
 
       rule :faktor do
         match("(", :aritm_uttryck, ")")  { |_, uttryck, _| uttryck }
-        match(:varde) #{ |varde| varde }
-        # match(variabel)
+        match(:varde)
       end
 
       rule :varde do
@@ -288,8 +292,8 @@ class StartaNu
       end
 
       rule :bool do
-        match("sant")
-        match("falskt")
+        match("sant") { |_| Varde.new(true) }
+        match("falskt") { |_| Varde.new(false) }
       end
 
       rule :heltal do
@@ -307,13 +311,14 @@ class StartaNu
     end
   end    
 
-  ######################## END OF BNF ##########################
+  ######################## END OF RULES ##########################
+  
   def done(str)
     ["quit","exit","bye",""].include?(str.chomp)
   end
   
   def run(interactive = false)
-    #log false
+    log false
     if interactive
       #return @startaNuParser.parse yield
       @startaNuParser.logger.level = Logger::WARN
@@ -326,8 +331,10 @@ class StartaNu
     if done(str) then
       puts "Bye."
     else
-      puts "=> #{@startaNuParser.parse str}"
-      #puts "Aktuella variabler: #{@@variables}"
+      #puts "=> #{@startaNuParser.parse str}"
+      result = @startaNuParser.parse str
+      print "=> "
+      result.eval
       run
     end
   end
@@ -337,7 +344,7 @@ class StartaNu
     log false
     result = @startaNuParser.parse f
     result.eval
-    puts "Worked like a charm!"
+    #puts "Worked like a charm!"
   end
 
   def log(state = true)
@@ -352,9 +359,10 @@ end
 
 # Testkörningar
 #=begin
-sn = StartaNu.new
+if __FILE__ == $0
+  sn = StartaNu.new
 
-sn.run(true){'
+  sn.run(true){'
 skriv "Första raden"
 skapa lista Lista = 1, 2, 3, 4, 50, 100
 skriv lista
@@ -364,6 +372,8 @@ start
   skriv nummer
 slut
 
+skapa na = "Na är natrium"
+
 skapa plista ParLista = "okej":5, "apa":4, "hej":3
 skriv plista
 för varje k, v i plista
@@ -372,6 +382,7 @@ start
   skriv k
   skriv v
 slut
+
 
 skapa namnet = " emil"
 skriv "hej jag heter" + namnet
@@ -493,7 +504,105 @@ skriv "hej " + 10+3
 skapa kanonvariabeln = "tjenare " + varen2
 skriv kanonvariabeln
 skriv "tjenare mannen " + varen2
+
+skapa metoden retur_test
+start
+  skriv "Inne i metoden retur_test"
+  returnera 1 + 10
+  skriv "Det här borde inte vara med"
+slut
+
+skapa var_retur_test = kör retur_test
+#var_retur_test = kör retur_test
+skriv var_retur_test
+skriv "Ändra värde på var_retur_test till 50 + 25:"
+var_retur_test = 50 + 25
+skriv var_retur_test
+
+skapa metoden retur_test2 var1
+start
+  skriv "Inne i metoden retur_test2"
+  skriv "var1 är: " + var1
+  returnera var1 + 30
+slut
+
+skapa var_retur_test2 = kör retur_test2 med 5
+skriv var_retur_test2
+skriv "var_retur_test2 borde vara 35 och är: " + var_retur_test2
+
+skapa metoden fib n
+start
+  skriv "**** Det n som kommer in till fib är: " + n
+  om n == 1 eller n == 2
+  start
+    returnera 1
+  annars
+    skriv "I annars är n: " + n
+    n = n - 1
+    skriv "I annars efter neg är n: " + n
+    skapa del1 = kör fib med n
+    skriv "del1 är: " + del1
+
+    n -= 1
+    skapa del2 = kör fib med n
+    skriv "del2 är: " + del2
+
+    returnera del1 + del2
+  slut
+slut
+
+skriv " "
+skriv "Fibonacci tester"
+skapa first = kör fib med 1
+skriv "Det första: " + first
+#skapa second = kör fib med 2
+#skriv second
+skapa third = kör fib med 3
+skriv "Det tredje: " + third
+#skapa fourth = kör fib med 4
+#skriv fourth
+#skapa fifth = kör fib med 5
+#skriv fifth
+skapa sixth = kör fib med 6
+skriv "Det sjätte: " + sixth
+
+# Testar att avbryta en för-loop
+för i 0 till 10
+start
+  skriv i
+  om i == 5
+  start
+    skriv "Här ska det avbrytas"
+    avbryt loop
+  slut
+slut
+
+# Testar att avbryta en medans-loop
+skapa asd = 0
+medans 1 == 1
+start
+  skriv "Again and again..."
+  asd += 1
+  om asd == 10
+  start
+    avbryt loop
+  slut
+slut
+
+skapa booltest = sant
+skapa booltest2 = falskt
+skriv booltest
+skriv booltest2
+om booltest == sant och booltest2 == falskt
+start
+  skriv "Det här ska skrivas ut"
+slut
+skapa booltest3 = booltest == sant och booltest2 == sant
+skriv "Borde vara falskt: " + booltest3
+
+skriv "En enkel sträng"
 '}
+end
 
 =begin
 skapa hej = 5
