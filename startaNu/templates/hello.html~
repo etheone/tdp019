@@ -1,0 +1,13 @@
+<html>
+  <head>
+    <title>Min startsida</title>
+  </head>
+  <body>
+  
+    <form method="POST" action="/">
+      <textarea name="input"></textarea>
+      </select>
+      <input type="submit" />
+    </form>
+  </body>
+</html>
