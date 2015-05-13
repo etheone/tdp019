@@ -32,7 +32,8 @@ class StartaNu
       token(/-?\d+/) { |heltal| heltal.to_i } # Matcha heltal
       #token(/\".+\"/) { |m| m} # Matcha strängar
       token(/\"[^\"]+\"/) { |m| m } # Ett nytt test att matcha strängar
-      token(/[=<>!\+\-\*\/]=/) { |m| m }
+      token(/\+{2}|\-{2}/) { |m| m }
+      token(/[=<>!\+\-*\ru\/]=/) { |m| m }
       token(/startaNu/) { |m| m }
       token(/slutaNu/) { |m| m }
       token(/[\wåäöÅÄÖ]+/) { |m| m } # Matcha ord
@@ -139,6 +140,8 @@ class StartaNu
         match(:identifierare, "-=", :uttry) {|name,op,value| Tilldelning.new(name, value, op) }
         match(:identifierare, "*=", :uttry) {|name,op,value| Tilldelning.new(name, value, op) }
         match(:identifierare, "/=", :uttry) {|name,op,value| Tilldelning.new(name, value, op) }
+        match(:identifierare, "++") {|name,op | Tilldelning.new(name, nil, op) }
+        match(:identifierare, "--") {|name,op | Tilldelning.new(name, nil, op) }
       end
 
 
@@ -184,7 +187,10 @@ class StartaNu
         match(:identifierare, ".", "storlek") { |var, _, _| LengthFunc.new(var.name) }
         match(:identifierare, ".", "spräng", "(", :strang, ")") { |var, _, _, _,delim,_|
           DelaStrang.new(var.name, delim) }
+        match(:identifierare, ".", "dela", "(", :strang, ")") { |var, _, _, _,delim,_|
+          DelaStrang.new(var.name, delim) }
         match(:identifierare, ".", "spräng") { |var, _, _,| DelaStrang.new(var.name) }
+        match(:identifierare, ".", "dela") { |var, _, _,| DelaStrang.new(var.name) }
         match(:identifierare, ".", "till_strang") {  |var, _, strang| AndraTyp.new(var.name, strang) }
         match(:identifierare, ".", "till_heltal") { |var, _, strang|  AndraTyp.new(var.name, strang) }
         match(:identifierare, ".", "till_flyttal") { |var, _, strang| AndraTyp.new(var.name, strang) }
@@ -339,6 +345,7 @@ class StartaNu
     end
   end
 
+
   def start
     f = File.read(@fil)
     log false
@@ -346,6 +353,7 @@ class StartaNu
     result.eval
     #puts "Worked like a charm!"
   end
+
 
   def log(state = true)
     if state
@@ -358,11 +366,12 @@ end
 
 
 # Testkörningar
-#=begin
+
 if __FILE__ == $0
   sn = StartaNu.new
 
   sn.run(true){'
+
 skriv "Första raden"
 skapa lista Lista = 1, 2, 3, 4, 50, 100
 skriv lista
@@ -442,6 +451,21 @@ slut
 skapa arraysen Lista = 5,6,7,8
 skriv arraysen
 arraysen.längd
+ta bort 5 arraysen
+skriv arraysen
+
+skapa parraysen ParLista = "hej":5, "tja":10, "tjena":20
+skriv parraysen
+parraysen.längd
+ta bort "hej" parraysen
+skriv parraysen
+
+skapa elias = 5
+skriv elias
+elias++
+skriv elias
+
+
 
 skapa parraysen ParLista = "hej":5
 skriv parraysen
@@ -601,10 +625,16 @@ skapa booltest3 = booltest == sant och booltest2 == sant
 skriv "Borde vara falskt: " + booltest3
 
 skriv "En enkel sträng"
+skriv " "
+skapa thisString = "Hejsan jag heter Emil Nilsson"
+skriv thisString
+thisString.dela(" ")
+skriv thisString
+parraysen.dela
 '}
 end
-
 =begin
+
 skapa hej = 5
 
 
@@ -613,4 +643,21 @@ start
 skriv "medans loop"
 hej = hej + 1
 slut
+
+
+if __FILE__ == $0
+  sn = StartaNu.new
+
+  sn.run(true){'
+
+skapa metoden summera var1, var2
+start
+skapa summa = var1 + var2
+returnera summa
+slut
+
+skapa test = kör summera med 1, 5
+skriv test
+
+'}
 =end

@@ -71,13 +71,13 @@ class AndraTyp
         tempInt = tempString.gsub(/[^0-9]/, '').to_i
         temp = Varde.new(tempInt)
         @@nuvarande_scope.change_variable(@name, temp)
-        puts "TEMPINT"
+        #puts "TEMPINT"
       elsif @to == "till_flyttal"
         tempString = @@nuvarande_scope.get_variable(@name).eval()
         tempFloat = tempString.gsub(/[^0-9\.0-9]/, '').to_f
         temp = Varde.new(tempFloat)
         @@nuvarande_scope.change_variable(@name, temp)
-        puts "TEMPFLOAT"
+       # puts "TEMPFLOAT"
 
       else
         puts "Massive ERROR"
@@ -96,13 +96,18 @@ class DelaStrang
   end
 
   def eval()
-    puts "Evaluerar STRÄNGDELNING!!!!"
+   # puts "Evaluerar STRÄNGDELNING!!!!"
     temp = @@nuvarande_scope.get_variable(@name).eval()
     if temp.class == String
       if @delim == nil
         tempArray = temp.split
+        @@nuvarande_scope.change_variable(@name, Lista.new(tempArray))
+      else
+        tempArray = temp.split(@delim.eval)
+        @@nuvarande_scope.change_variable(@name, Lista.new(tempArray))
       end
-      @@nuvarande_scope.change_variable(@name, Lista.new(tempArray))
+    else
+      puts "\nFELMEDDELANDE: Det går ej att spränga/dela variabeln #{@name.upcase} pga att det är en #{temp.class.to_s.upcase}, denna funktionen fungerar endast med strängar."
     end
   end
 end

@@ -81,7 +81,12 @@ class Satser
         @@nuvarande_scope.add_variable(k, Varde.new(v))
       end
     end
-
+    #@satser.each_index do | index |
+     # puts "Index #{index}: #{@satser[index]}"
+     # @satser.each do |sats|
+      #  puts "Under index: #{sats}"
+      #end
+    #end
     # Itererar och evaluerar alla satser
     @satser.each do |sats|
       
@@ -437,6 +442,11 @@ class Tilldelning
         when '/='
           temp = Varde.new(@@nuvarande_scope.get_variable(@name).eval() / @value.eval())
           puts temp if @@debug
+        when '++'
+          temp = Varde.new(@@nuvarande_scope.get_variable(@name).eval() + 1)
+          puts temp if @@debug
+        when '--'
+          temp = Varde.new(@@nuvarande_scope.get_variable(@name).eval() - 1)
         end
         puts "KOM HITEN DÅ" if @@debug
         @@nuvarande_scope.change_variable(@name, temp)
