@@ -374,22 +374,6 @@ class Deklarering
     else
       @@nuvarande_scope.add_variable(@name, Varde.new(@value.eval()))
     end
-
-=begin    if value.class == FunktionsAnrop
-      value_temp = Varde.new(value.eval())
-      if value_temp == nil
-        @@nuvarande_scope.add_variable(@name, value_temp)
-      else
-        @@nuvarande_scope.add_variable(@name, Varde.new(value_temp.eval()))
-      end
-    else
-      if @value == nil
-        @@nuvarande_scope.add_variable(@name, @value)
-      else
-        @@nuvarande_scope.add_variable(@name, Varde.new(@value.eval()))
-      end
-    end
-=end    
     :ok
   end
 end
@@ -531,8 +515,6 @@ class Lista
           @array << value[i-1]
         end
       }          
-    else
-      @array # Ska det se ut såhär Emil!!! :)
     end
   end
 

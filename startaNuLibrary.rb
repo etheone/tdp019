@@ -1,6 +1,10 @@
 # -*- coding: iso-8859-1 -*-
 
-class LengthFunc
+
+##################################
+# Klass för att funktionen längd #
+##################################
+class HamtaLangd
   attr_accessor :name
   def initialize(name)
     @name = name
@@ -10,15 +14,17 @@ class LengthFunc
     if @@nuvarande_scope.get_variable(@name).eval().class == String ||
         @@nuvarande_scope.get_variable(@name).eval().class == Array ||
         @@nuvarande_scope.get_variable(@name).eval().class == Hash
-      puts @@nuvarande_scope.get_variable(@name).eval().length
+      return @@nuvarande_scope.get_variable(@name).eval().length
     else
-      ####### GÅR ATT FIXA SÅ LÄNGD FUNKAR PÅ INTS OCH FLOATS OXÅ. .to_s.length om vi vill#######
       temp = @@nuvarande_scope.get_variable(@name).eval().class.to_s.upcase
       puts "Funktionen .längd är inte tillgängligt typen #{temp}"
     end
   end
 end
 
+##########################################
+# Klass för att ändra typ på en variabel #
+##########################################
 class AndraTyp
   attr_accessor :name, :to
   def initialize(name, to)
@@ -71,14 +77,11 @@ class AndraTyp
         tempInt = tempString.gsub(/[^0-9]/, '').to_i
         temp = Varde.new(tempInt)
         @@nuvarande_scope.change_variable(@name, temp)
-        #puts "TEMPINT"
       elsif @to == "till_flyttal"
         tempString = @@nuvarande_scope.get_variable(@name).eval()
         tempFloat = tempString.gsub(/[^0-9\.0-9]/, '').to_f
         temp = Varde.new(tempFloat)
         @@nuvarande_scope.change_variable(@name, temp)
-       # puts "TEMPFLOAT"
-
       else
         puts "Massive ERROR"
       end
@@ -88,6 +91,9 @@ class AndraTyp
   end
 end
 
+###################################
+# Klass för att dela på en sträng #
+###################################
 class DelaStrang
   attr_accessor :name, :delim
   def initialize(name, delim = nil)
@@ -96,7 +102,6 @@ class DelaStrang
   end
 
   def eval()
-   # puts "Evaluerar STRÄNGDELNING!!!!"
     temp = @@nuvarande_scope.get_variable(@name).eval()
     if temp.class == String
       if @delim == nil
@@ -112,13 +117,17 @@ class DelaStrang
   end
 end
 
-class GetKlass
+#####################################
+# Klass för funktionaliteten .klass #
+#####################################
+class HamtaKlass
   attr_accessor :name
   def initialize(name)
     @name = name
+    @converter = {String => "Sträng", Fixnum => "Heltal", Float => "Flyttal", Array => "Lista", Hash => "ParLista"}
   end
 
   def eval()
-    puts @@nuvarande_scope.get_variable(@name).eval().class
+    return @converter[@@nuvarande_scope.get_variable(@name).eval().class]
   end
 end

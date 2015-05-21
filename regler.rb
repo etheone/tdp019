@@ -3,10 +3,9 @@ require './rdparse'
 require './klasser'
 require './startaNuLibrary'
 
-######################################################################
-# Denna fil är inte uppkommenterad till 100% än    .                 #
-# I slutet av filen finns det ett antal tester på språket i nuläget. #
-######################################################################
+#############
+# regler.rb #
+#############
 
 
 class StartaNu
@@ -58,7 +57,6 @@ class StartaNu
         match(:skriv) {|skriv| [skriv]}
         match(:deklarering) { |deklarering| [deklarering] }
         match(:funktion) { |funktion| [funktion] }
-        match(:funktionsanrop) { |f_anrop| [f_anrop] } # Nytillagt, kanske ska tas bort?
         match(:tilldelning) { |tilldelning| [tilldelning] }
         match(:nyrad) {|nyrad| [nyrad]}
       end
@@ -73,6 +71,7 @@ class StartaNu
       ############# UTRSKRIFT ###############
 
       rule :skriv do
+        match('skriv', :builtinfuncs) { |_, att_skriva_ut| SkrivUt.new(att_skriva_ut) }
         match('skriv', :uttry) { |_, att_skriva_ut| SkrivUt.new(att_skriva_ut) }
       end
 
@@ -85,9 +84,6 @@ class StartaNu
         match("för", :identifierare, :heltal, "till", :heltal, :nyrad, "start", :nyrad,
               :satser, "slut") { |_,var_namn,start,_,slut,_,_,_,satser,_|
           ForLoop.new(var_namn,start,slut,Satser.new(satser))}
-        #match("för", :heltal, "till", :heltal, :nyrad, "start", :nyrad, ###############
-        #      :satser, "slut") { |_,start,_,slut,_,_,_,satser,_| ###################### BORTTAGET!!!!!!!
-        #  ForLoop.new(start,slut,Satser.new(satser))} #################################
       end
 
       rule :medans do
@@ -183,8 +179,8 @@ class StartaNu
       end
 
       rule :builtinfuncs do
-        match(:identifierare, ".", "längd") { |var, _, _| LengthFunc.new(var.name) }
-        match(:identifierare, ".", "storlek") { |var, _, _| LengthFunc.new(var.name) }
+        match(:identifierare, ".", "längd") { |var, _, _| HamtaLangd.new(var.name) }
+        match(:identifierare, ".", "storlek") { |var, _, _| HamtaLangd.new(var.name) }
         match(:identifierare, ".", "spräng", "(", :strang, ")") { |var, _, _, _,delim,_|
           DelaStrang.new(var.name, delim) }
         match(:identifierare, ".", "dela", "(", :strang, ")") { |var, _, _, _,delim,_|
@@ -194,7 +190,7 @@ class StartaNu
         match(:identifierare, ".", "till_strang") {  |var, _, strang| AndraTyp.new(var.name, strang) }
         match(:identifierare, ".", "till_heltal") { |var, _, strang|  AndraTyp.new(var.name, strang) }
         match(:identifierare, ".", "till_flyttal") { |var, _, strang| AndraTyp.new(var.name, strang) }
-        match(:identifierare, ".", "klass") { |var, _, _| GetKlass.new(var.name)  }
+        match(:identifierare, ".", "klass") { |var, _, _| HamtaKlass.new(var.name)  }
         
       end
 
@@ -250,13 +246,13 @@ class StartaNu
       end
 
       rule :jamforelse do
+        match(:builtinfuncs)
         match(:aritm_uttryck)
       end
 
       rule :logisk_operator do
         match("och") 
         match("eller")
-        match("inte är") # Denna funkar inte, är inte implementerad
       end
 
       rule :jamf_operator do
@@ -328,7 +324,6 @@ class StartaNu
     log false
     if interactive
       begin
-        #return @startaNuParser.parse yield
         @startaNuParser.logger.level = Logger::WARN
         result = @startaNuParser.parse yield
         result.eval
@@ -342,7 +337,6 @@ class StartaNu
     if done(str) then
       puts "Bye."
     else
-      #puts "=> #{@startaNuParser.parse str}"
       result = @startaNuParser.parse str
       print "=> "
       result.eval
@@ -360,7 +354,6 @@ class StartaNu
     rescue Exception => msg
       puts "Problem with syntax"
     end
-    #puts "Worked like a charm!"
   end
 
 
@@ -379,5 +372,16 @@ if __FILE__ == $0
     
     sn.run(true){'
 skriv "hej"
+skapa h = 3
+skriv h.klass
+om h.klass == "Heltal"
+start
+skriv h
+slut
+
+om 3 * 5 > 10
+start
+  skriv "15 är större än 10!!!"
+slut
 '}
 end
