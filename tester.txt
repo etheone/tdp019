@@ -1,0 +1,42 @@
+#FIB TEST
+
+skapa metoden fib n
+start
+  om n == 1 eller n == 2
+  start
+    returnera 1
+  slut
+  
+    skapa del1 = kör fib med n - 1
+    skapa del2 = kör fib med n - 2
+
+    returnera del1 + del2
+slut
+
+skapa hej = 1
+medans hej <= 20
+start
+skriv fib(hej)
+slut
+
+##########
+
+#SCOPE TEST
+
+skapa hej = "Denna ligger i det globala scopet"
+
+skapa metoden m1
+start
+  skriv hej
+slut
+
+skapa metoden m2
+start
+  skapa hej = "Denna variabel ligger i metoden m2"
+  kör m1
+slut
+
+kör m2
+
+
+###########

@@ -464,7 +464,7 @@ end
 ######################
 class ForLoop
   attr_accessor :var_namn, :start, :slut, :satser
-  def initialize(var_namn = nil,start,slut,satser)
+  def initialize(var_namn, start, slut, satser)
     @var_namn = var_namn.name
     @start = start.eval()
     @slut = slut.eval()

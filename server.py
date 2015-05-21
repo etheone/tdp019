@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
 
+import os
+
 from flask import Flask
 from flask import render_template
 from flask import request
@@ -22,16 +24,16 @@ def index_page():
 def code_page():
     if request.method == 'POST':
         input = request.form['input']
-        print 'det har hamtades ' + input
-        print repr(input)
+        #print 'det har hamtades ' + input
+        #print repr(input)
         input2 = input.replace('\r\n', '\n')
         decoded_input = input2.encode('utf-8')
         decoded_input += "STOPNU"
-        print repr(decoded_input)
+        # print repr(decoded_input)
         result = call_ruby(decoded_input)
-        print "REsult = " + result
+        #print "REsult = " + result
         temp = result.decode('utf-8')
-        print "Temp = " + temp
+        #print "Temp = " + temp
         return render_template('code.html', r=temp, t=input)
     else:
         content = ""
@@ -54,6 +56,11 @@ def contact_us_page():
 # Test att anropa en ruby-modul
 def call_ruby(string):
     print 'launching slave process...'
+    #repopath = os.environ['OPENSHIFT_REPO_DIR']
+    
+    # slavepath = os.path.join(repopath, '/slave.rb')
+    #slavepath = './slave.rb'
+    #print slavepath + "THIS IS THE SLAVE PATH"
     slave = Popen(['ruby', 'slave.rb'], stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     print "slave created"
     result = ""
@@ -61,7 +68,7 @@ def call_ruby(string):
         # read user input, expression to be evaluated:
         #   line = raw_input('Enter expression or exit:')
         # write that line to slave's stdin
-        print string + " hehehehe "
+        #print string + " hehehehe "
         slave.stdin.write(string)
         # result will be a list of lines:
         
@@ -77,8 +84,8 @@ def call_ruby(string):
             # read one line, remove newline chars and trailing spaces:
            
             line = slave.stdout.readline().rstrip()
-            print "Vi kommer inte hit heller"
-            print line
+            #print "Vi kommer inte hit heller"
+            #print line
             #print 'line:', line
 
             if line == '[end]':
@@ -86,7 +93,7 @@ def call_ruby(string):
                 break
             #if line == "":
              #   return result
-            print "Nu ar vi har da" + result
+            #print "Nu ar vi har da" + result
             result += line + "\n"
         break
     
