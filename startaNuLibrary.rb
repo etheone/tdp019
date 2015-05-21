@@ -131,3 +131,8 @@ class HamtaKlass
     return @converter[@@nuvarande_scope.get_variable(@name).eval().class]
   end
 end
+
+
+#######################
+#   Skriver hej       #
+######################
