@@ -122,3 +122,8 @@ class GetKlass
     puts @@nuvarande_scope.get_variable(@name).eval().class
   end
 end
+
+
+#######################
+#   Skriver hej       #
+######################
