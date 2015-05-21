@@ -132,7 +132,3 @@ class HamtaKlass
   end
 end
 
-
-#######################
-#   Skriver hej       #
-######################
