@@ -39,8 +39,7 @@ class StartaNu
       token(/./) { |m| m } # Matcha tecken
       
       start :program do
-        match("startaNu",:nyrad,:satser,"slutaNu") {|_,_,satser,_| Satser.new(satser)}
-        match(:satser) {|satser| Satser.new(satser)} # För tester och i interpretatorn
+        match(:satser) {|satser| Satser.new(satser)} 
       end
 
       rule :satser do
